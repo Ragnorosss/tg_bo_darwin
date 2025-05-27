@@ -14,6 +14,7 @@ export async function handleCallbackQuery(ctx: MyContext, data: string) {
   }
 
   if (!ctx.session) ctx.session = {};
+
   switch (data) {
     case 'give_admin':
       await ctx.answerCbQuery('Админка выдана');
@@ -95,11 +96,11 @@ export async function handleCallbackQuery(ctx: MyContext, data: string) {
         Markup.inlineKeyboard([
           [
             Markup.button.callback('📡 Получить сигнал', 'get_signal'),
-            Markup.button.callback('🤖 Как работает бот?', 'btn_2'),
+            Markup.button.callback('🤖 Как работает бот?', 'how_works_bot'),
           ],
           [
-            Markup.button.callback('🏆 Лидерборд', 'btn_4'),
-            Markup.button.callback('✉️ Написать в саппорт', 'btn_5'),
+            Markup.button.callback('🏆 Лидерборд', 'leader_boards'),
+            Markup.button.callback('✉️ Написать в саппорт', 'get_support_link'),
           ],
           [Markup.button.callback('🔙 Назад', 'show_main_menu')],
         ])
@@ -116,7 +117,6 @@ export async function handleCallbackQuery(ctx: MyContext, data: string) {
       );
       break;
     case 'show_time_menu_stok':
-      // Показать меню для STOK (например, или сразу OTC крипто)
       await ctx.editMessageText(
         'Меню STOK — выберите таймфрейм:',
         Markup.inlineKeyboard([
@@ -136,32 +136,6 @@ export async function handleCallbackQuery(ctx: MyContext, data: string) {
             Markup.button.callback('H4', 'timeframe_h4_stok'),
           ],
           [Markup.button.callback('Назад', 'get_signal')],
-        ])
-      );
-      break;
-    case 'btn_2':
-      await ctx.answerCbQuery();
-      await ctx.editMessageText(
-        `🤖 Как работает бот?
-
-          Наш бот — это инструмент для автоматического получения торговых сигналов на платформе Pocket Option.
-
-          📈 Он анализирует более 100 активов и определяет оптимальные точки входа в рынок.
-
-          🔔 Что вы получаете:
-          • Сигналы с чётким направлением (вверх или вниз)
-          • Указание актива и таймфрейма
-          • Уведомления в реальном времени прямо в Telegram
-
-          📌 Чтобы получить доступ ко всем функциям:
-          1. Зарегистрируйтесь через нашу ссылку (это важно!)
-          2. Введите свой ID из профиля Pocket Option
-          3. Получите доступ к бот-сигналам
-
-          Если у вас остались вопросы — напишите в поддержку 💬`,
-        Markup.inlineKeyboard([
-          [Markup.button.callback('📝 Регистрация', 'start_registration')],
-          [Markup.button.callback('🏠 В меню', 'show_main_menu')],
         ])
       );
       break;
