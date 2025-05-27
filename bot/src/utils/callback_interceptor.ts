@@ -9,7 +9,7 @@ export async function handleCallbackQuery(ctx: MyContext, data: string) {
   });
 
   if (!res.ok) {
-    await ctx.reply('Ошибка при получении данных пользователя');
+    await ctx.reply('Помилка при отриманні даних користувача');
     return;
   }
 
@@ -17,65 +17,66 @@ export async function handleCallbackQuery(ctx: MyContext, data: string) {
 
   switch (data) {
     case 'give_admin':
-      await ctx.answerCbQuery('Админка выдана');
+      await ctx.answerCbQuery('Адмінка видана');
       await ctx.reply(
-        'Введите Telegram ID пользователя, которому хотите выдать админку:'
+        'Введіть Telegram ID користувача, якому хочете видати адмінку:'
       );
       ctx.session.waitingForAdminId = true;
       ctx.session.action = 'give_admin';
       break;
 
     case 'revoke_admin':
-      await ctx.answerCbQuery('Админка утрачена');
+      await ctx.answerCbQuery('Адмінка відкликана');
       await ctx.reply(
-        'Введите Telegram ID пользователя, у которого хотите забрать админку:'
+        'Введіть Telegram ID користувача, у якого хочете забрати адмінку:'
       );
       ctx.session.waitingForAdminId = true;
       ctx.session.action = 'revoke_admin';
       break;
 
     case 'set_support_link':
-      await ctx.answerCbQuery('Ссылка на саппорт установлена');
+      await ctx.answerCbQuery('Посилання на підтримку встановлено');
       break;
 
     case 'get_user_info':
-      await ctx.answerCbQuery('Информация о пользователе получена');
+      await ctx.answerCbQuery('Інформація про користувача отримана');
       break;
 
     case 'search_project_by_id':
-      await ctx.answerCbQuery('Поиск проекта запущен');
+      await ctx.answerCbQuery('Пошук проєкту розпочато');
       break;
 
     case 'grant_access_self':
-      await ctx.answerCbQuery('Доступ выдан себе');
+      await ctx.answerCbQuery('Доступ надано собі');
       break;
 
     case 'grant_access_by_id':
-      await ctx.answerCbQuery('Доступ выдан по id');
+      await ctx.answerCbQuery('Доступ надано за id');
       break;
 
     case 'revoke_access_by_id':
-      await ctx.answerCbQuery('Доступ удалён по id');
+      await ctx.answerCbQuery('Доступ видалено за id');
       break;
+
     case 'get_signal': {
       // if (
       //   ctx.session.authorizedInQountex === false ||
       //   user?.qountexId === null
       // ) {
       //   return await ctx.reply(
-      //     '❌ Вы не зарегистрированы. Пожалуйста, зарегистрируйтесь.',
+      //     '❌ Ви не зареєстровані. Будь ласка, зареєструйтесь.',
       //     Markup.inlineKeyboard([
-      //       [Markup.button.callback('📝 Регистрация', 'start_registration')],
-      //       [Markup.button.callback('Написать в саппорт', 'btn_5')],
+      //       [Markup.button.callback('📝 Реєстрація', 'start_registration')],
+      //       [Markup.button.callback('Написати в підтримку', 'btn_5')],
       //       [Markup.button.callback('🏠 В меню', 'show_main_menu')],
       //     ])
       //   );
       // }
 
-      // ctx.session.action = 'get_signal'; // только теперь устанавливаем
+      // ctx.session.action = 'get_signal'; // тільки тепер встановлюємо
 
       await ctx.editMessageText(
-        'Новое меню:',
+        'Нове меню:',
         Markup.inlineKeyboard([
           [
             Markup.button.callback('STOK', 'show_time_menu_stok'),
@@ -86,39 +87,42 @@ export async function handleCallbackQuery(ctx: MyContext, data: string) {
       );
       break;
     }
+
     case 'show_main_menu':
       await ctx.replyWithHTML(
-        `🔑 Чтобы получить полный доступ к нашему роботу с более чем 100 активами, Вам нужно создать <b>НОВЫЙ АККАУНТ</b> на брокере Pocket Option строго по ссылке 🔗\n\n
-❗ <b>Внимание!</b> Даже если у Вас уже есть аккаунт — нужно создать <b>НОВЫЙ</b> по ссылке ниже. Иначе бот не сможет проверить аккаунт, и Вы не получите доступ к боту ❗\n\n
-👉 <a href="https://broker-qx.pro/sign-up/?lid=1367282">Зарегистрироваться на Pocket Option</a>\n\n
-⚠️ <b>Важно:</b> не давайте никому свой ID, так как бот выдается только на 1 аккаунт.\n\n
-Если вам нужно что-то еще, дайте знать! 😉`,
+        `🔑 Щоб отримати повний доступ до нашого робота з більш ніж 100 активами, Вам потрібно створити <b>НОВИЙ АККАУНТ</b> у брокера Quotex строго за посиланням 🔗\n\n
+❗ <b>Увага!</b> Навіть якщо у Вас уже є акаунт — потрібно створити <b>НОВИЙ</b> за посиланням нижче. Інакше бот не зможе перевірити акаунт, і Ви не отримаєте доступ до бота ❗\n\n
+👉 <a href="https://broker-qx.pro/sign-up/?lid=1367282">Зареєструватись на Quotex</a>\n\n
+⚠️ <b>Важливо:</b> не давайте нікому свій ID, оскільки бот видається тільки на 1 акаунт.\n\n
+Якщо Вам потрібно щось ще, дайте знати! 😉`,
         Markup.inlineKeyboard([
           [
-            Markup.button.callback('📡 Получить сигнал', 'get_signal'),
-            Markup.button.callback('🤖 Как работает бот?', 'how_works_bot'),
+            Markup.button.callback('📡 Отримати сигнал', 'get_signal'),
+            Markup.button.callback('🤖 Як працює бот?', 'how_works_bot'),
           ],
           [
-            Markup.button.callback('🏆 Лидерборд', 'leader_boards'),
-            Markup.button.callback('✉️ Написать в саппорт', 'get_support_link'),
+            Markup.button.callback('🏆 Лідерборд', 'leader_boards'),
+            Markup.button.callback('✉️ Написати в підтримку', 'get_support_link'),
           ],
           [Markup.button.callback('🔙 Назад', 'show_main_menu')],
         ])
       );
       break;
+
     case 'show_reg_menu':
       await ctx.reply(
-        `"Введите ваш ID, который находится в вашем профиле (Например: 46230574)"
-Сообщение просит пользователя ввести свой ID, который можно найти в его профиле, и приводит пример номера ID: 46230574. `,
+        `"Введіть ваш ID, який знаходиться у вашому профілі (Наприклад: 46230574)"\n
+Повідомлення просить користувача ввести свій ID, який можна знайти в його профілі, і наводить приклад номера ID: 46230574.`,
         Markup.inlineKeyboard([
-          [Markup.button.callback('Написать в саппорт', 'btn_5')],
-          [Markup.button.callback('Отмена', 'show_main_menu')],
+          [Markup.button.callback('Написати в підтримку', 'btn_5')],
+          [Markup.button.callback('Відміна', 'show_main_menu')],
         ])
       );
       break;
+
     case 'show_time_menu_stok':
       await ctx.editMessageText(
-        'Меню STOK — выберите таймфрейм:',
+        'Меню STOK — оберіть таймфрейм:',
         Markup.inlineKeyboard([
           [
             Markup.button.callback('S5', 'timeframe_s5_stok'),
@@ -139,9 +143,10 @@ export async function handleCallbackQuery(ctx: MyContext, data: string) {
         ])
       );
       break;
+
     case 'show_time_menu_oct':
       await ctx.editMessageText(
-        'Меню OCT — выберите таймфрейм:',
+        'Меню OCT — оберіть таймфрейм:',
         Markup.inlineKeyboard([
           [
             Markup.button.callback('S5', 'timeframe_s5_oct'),
@@ -164,6 +169,6 @@ export async function handleCallbackQuery(ctx: MyContext, data: string) {
       break;
 
     default:
-      await ctx.answerCbQuery('Неизвестная команда');
+      await ctx.answerCbQuery('Невідома команда');
   }
 }
