@@ -16,10 +16,13 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "mongoose": "^8.15.0",
-    "telegraf": "^4.16.2"
+    "telegraf": "^4.16.3"
   },
   "devDependencies": {
+    "@types/debug": "^4.1.12",
     "@types/express": "^5.0.2",
+    "@types/node-fetch": "^2.6.12",
+    "@types/safe-compare": "^1.1.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.8.3"
   }

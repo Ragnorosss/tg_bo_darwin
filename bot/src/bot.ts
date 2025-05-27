@@ -1,10 +1,10 @@
-import { Context, Markup, Telegraf, session } from 'telegraf';
+import { Markup, Telegraf, session } from 'telegraf';
 import dotenv from 'dotenv';
 import { adminMenu } from './components/adminMenu';
 import { handleCallbackQuery } from './utils/callback_interceptor';
 import { MyContext } from './types/CstContext';
 import { currencyPairs, otcPairs } from './components/curremcuPair';
-
+import { pages } from './components/what_bot_can';
 dotenv.config();
 
 const BOT_TOKEN = process.env.BOT_TOKEN!;
@@ -13,6 +13,36 @@ const bot = new Telegraf<MyContext>(BOT_TOKEN);
 bot.use(session());
 
 bot.launch();
+
+function getPaginationKeyboard(page: number) {
+  const buttons = [];
+  const totalPages = pages.length;
+
+  if (page > 0) {
+    buttons.push({ text: '⬅️ Назад', callback_data: `page_${page - 1}` });
+  }
+ buttons.push({
+    text: `Страница ${page + 1} из ${totalPages}`,
+    callback_data: 'page_counter',
+  });
+
+  if (page < pages.length - 1) {
+    buttons.push({ text: 'Вперёд ➡️', callback_data: `page_${page + 1}` });
+  }
+ 
+  // Кнопка "В меню"
+  const mainMenuButton = [
+    { text: '🏠 В меню', callback_data: 'show_main_menu' },
+  ];
+  return {
+    reply_markup: {
+      inline_keyboard: [
+        buttons, // Строка с навигацией назад/вперёд
+        mainMenuButton, // Отдельная строка с кнопкой "В меню"
+      ],
+    },
+  };
+}
 
 bot.start(async (ctx) => {
   const telegramId = String(ctx.from.id);
@@ -28,7 +58,7 @@ bot.start(async (ctx) => {
   });
   const user = await res.json();
   console.log(user);
-  
+
   if (user?.role.includes('admin')) {
     await ctx.reply('Вы в роли администратора');
     await ctx.reply('Админское меню:', adminMenu);
@@ -55,7 +85,7 @@ bot.start(async (ctx) => {
   );
 
   if (!user) {
-    const res = await fetch(`http://localhost:3000/users`, {
+    await fetch(`http://localhost:3000/users`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -66,6 +96,39 @@ bot.start(async (ctx) => {
     });
   }
 });
+bot.action('btn_2', async (ctx) => {
+  const page = 0;
+  await ctx.replyWithPhoto(
+    { source: pages[page].photo },
+    {
+      caption: pages[page].text,
+      parse_mode: 'Markdown',
+      ...getPaginationKeyboard(page),
+    }
+  );
+  await ctx.answerCbQuery();
+});
+
+bot.action(/page_(\d+)/, async (ctx) => {
+  const page = parseInt(ctx.match[1]);
+
+  if (page < 0 || page >= pages.length) {
+    return ctx.answerCbQuery();
+  }
+
+  await ctx.editMessageMedia(
+    {
+      type: 'photo',
+      media: { source: pages[page].photo }, // <-- здесь
+      caption: pages[page].text,
+      parse_mode: 'Markdown',
+    },
+    getPaginationKeyboard(page)
+  );
+
+  await ctx.answerCbQuery();
+});
+
 bot.action(/^select_pair_(.+)$/, async (ctx) => {
   const selectedPair = ctx.match[1].replace('_', '/'); // например EUR/USD
   const { selectedTimeframe, selectedType } = ctx.session;
