@@ -1,11 +1,19 @@
 import { Markup } from 'telegraf';
 import { MyContext } from '../types/CstContext';
-import { User } from '../models/User';
 
 export async function handleCallbackQuery(ctx: MyContext, data: string) {
   const telegramId = String(ctx?.from?.id);
+  const res = await fetch(`http://localhost:3000/users/${telegramId}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
 
-  const user = await User.findOne({ telegramId });
+  if (!res.ok) {
+    await ctx.reply('Ошибка при получении данных пользователя');
+    return;
+  }
+
+  const user = await res.json();
 
   if (!ctx.session) ctx.session = {};
   switch (data) {

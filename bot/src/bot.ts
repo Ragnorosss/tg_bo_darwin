@@ -1,7 +1,5 @@
 import { Context, Markup, Telegraf, session } from 'telegraf';
 import dotenv from 'dotenv';
-import { connectDB } from './config/db';
-import { User } from './models/User';
 import { adminMenu } from './components/adminMenu';
 import { handleCallbackQuery } from './utils/callback_interceptor';
 import { MyContext } from './types/CstContext';
@@ -14,16 +12,23 @@ const bot = new Telegraf<MyContext>(BOT_TOKEN);
 
 bot.use(session());
 
-connectDB().then(() => {
-  bot.launch();
-  console.log('🤖 Бот запущен через long polling');
-});
+bot.launch();
 
 bot.start(async (ctx) => {
   const telegramId = String(ctx.from.id);
 
-  let user = await User.findOne({ telegramId });
-
+  const res = await fetch(`http://localhost:3000/users`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      telegramId,
+      username: ctx.from.username,
+      firstName: ctx.from.first_name,
+    }),
+  });
+  const user = await res.json();
+  console.log(user);
+  
   if (user?.role.includes('admin')) {
     await ctx.reply('Вы в роли администратора');
     await ctx.reply('Админское меню:', adminMenu);
@@ -50,11 +55,14 @@ bot.start(async (ctx) => {
   );
 
   if (!user) {
-    user = await User.create({
-      telegramId,
-      username: ctx.from.username,
-      firstName: ctx.from.first_name,
-      qountexId: null,
+    const res = await fetch(`http://localhost:3000/users`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        telegramId,
+        username: ctx.from.username,
+        firstName: ctx.from.first_name,
+      }),
     });
   }
 });
@@ -195,7 +203,27 @@ bot.on('text', async (ctx) => {
     return ctx.reply('Пожалуйста, введите корректный числовой Telegram ID.');
   }
 
-  const user = await User.findOne({ telegramId: inputId });
+  const telegramId = inputId;
+
+  // Получаем пользователя
+  const res = await fetch(`http://localhost:3000/users`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      telegramId,
+      username: ctx.from.username,
+      firstName: ctx.from.first_name,
+    }),
+  });
+
+  const user = await res.json();
+
+  if (!user) {
+    ctx.session.waitingForAdminId = false;
+    ctx.session.action = undefined;
+    return ctx.reply(`Пользователь с ID ${inputId} не найден.`);
+  }
+
   if (
     ctx.session.action === 'get_signal' &&
     ctx.session.authorizedInQountex === false &&
@@ -209,29 +237,27 @@ bot.on('text', async (ctx) => {
       ])
     );
   }
-  if (!user) {
-    ctx.session.waitingForAdminId = false;
-    ctx.session.action = undefined;
-    return ctx.reply(`Пользователь с ID ${inputId} не найден.`);
-  }
 
   if (ctx.session.action === 'give_admin') {
     if (user.role !== 'admin') {
-      user.role = 'admin';
-      await user.save();
+      await fetch(`http://localhost:3000/users/${telegramId}/admin`, {
+        method: 'PATCH',
+      });
       await ctx.reply(`✅ Админка выдана пользователю с ID ${inputId}.`);
     } else {
       await ctx.reply(`ℹ️ Пользователь с ID ${inputId} уже админ.`);
     }
   } else if (ctx.session.action === 'revoke_admin') {
     if (user.role === 'admin') {
-      user.role = 'user';
-      await user.save();
+      await fetch(`http://localhost:3000/users/${telegramId}/revoke-admin`, {
+        method: 'PATCH',
+      });
       await ctx.reply(`✅ Админка удалена у пользователя с ID ${inputId}.`);
     } else {
       await ctx.reply(`ℹ️ Пользователь с ID ${inputId} не является админом.`);
     }
   }
+
   ctx.session.waitingForAdminId = false;
   ctx.session.action = undefined;
 });
