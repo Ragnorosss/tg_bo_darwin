@@ -41,6 +41,7 @@ export class UserController {
       const user = await User.findOne({ telegramId });
       if (!user) {
         res.status(404).json({ message: 'Пользователь не найден' });
+        return;
       }
       res.json(user);
     } catch (err) {
