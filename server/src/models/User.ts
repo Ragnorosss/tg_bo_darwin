@@ -1,4 +1,18 @@
-import { Schema, model } from 'mongoose';
+import { Document, Schema, model } from 'mongoose';
+
+export interface IUser extends Document {
+  telegramId: string;
+  username?: string;
+  firstName?: string;
+  qountexId?: number;
+  joinedAt: Date;
+  gaveAdminAccess: boolean;
+  traderId: string;
+  status: string;
+  registration: boolean;
+  createdAt: Date;
+  role: 'admin' | 'user';
+}
 
 const userSchema = new Schema({
   telegramId: { type: String, required: true, unique: true },

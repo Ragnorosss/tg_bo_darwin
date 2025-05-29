@@ -1,0 +1,17 @@
+export const topUsers = [
+  { nickname: 'CryptoKing', earnings: 149872 },
+  { nickname: 'BearHunter', earnings: 138450 },
+  { nickname: 'BullMaster', earnings: 125300 },
+  { nickname: 'TraderX', earnings: 113560 },
+  { nickname: 'MoonWalker', earnings: 98720 },
+  { nickname: 'HodlHero', earnings: 85600 },
+  { nickname: 'CoinNinja', earnings: 74530 },
+  { nickname: 'AlphaWolf', earnings: 65200 },
+  { nickname: 'PumpGuru', earnings: 54010 },
+  { nickname: 'FomoQueen', earnings: 43210 },
+  { nickname: 'SatoshiFan', earnings: 38500 },
+  { nickname: 'DeFiQueen', earnings: 33750 },
+  { nickname: 'WhaleWatcher', earnings: 29500 },
+  { nickname: 'AltcoinAce', earnings: 25600 },
+  { nickname: 'FlashCrash', earnings: 19800 },
+];
