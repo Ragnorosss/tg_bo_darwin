@@ -46,10 +46,10 @@ bot.command('start', async (ctx) => {
   }
   console.log(user);
 
-  // if (typeof user?.role === 'string' && user.role.includes('admin')) {
-  //   await ctx.reply('Вы в роли администратора');
-  //   await ctx.reply('Админское меню:', adminMenu);
-  // }
+  if (typeof user?.role === 'string' && user.role.includes('admin')) {
+    await ctx.reply('Вы в роли администратора');
+    await ctx.reply('Админское меню:', adminMenu);
+  }
   await ctx.replyWithPhoto(
     { source: './src/assets/welcome.jpg' },
     {
@@ -188,8 +188,18 @@ bot.action(/^select_pair_(.+)$/, async (ctx) => {
 bot.action('get_support_link', async (ctx) => {
   try {
     const response = await fetch(
-      `${process.env.URL}users/support/get-support-link`
-    ); // или твой продовый URL
+      `${process.env.URL}support/get-support-link`,
+      {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+    if (!response.ok) {
+      const text = await response.text(); // вместо json, чтобы увидеть ошибку
+      console.error(`Ошибка ${response.status}: ${text}`);
+      await ctx.reply('Проблема с получением пользователя');
+      return;
+    }
     const data = await response.json();
 
     if (!data.link) {
