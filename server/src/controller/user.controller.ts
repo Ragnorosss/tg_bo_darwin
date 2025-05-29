@@ -88,37 +88,25 @@ export class UserController {
     }
   }
   static async handlePostback(req: Request, res: Response): Promise<void> {
+    const query = req.query;
+
+    const uid = String(query.uid);
+    const reg = String(query.reg);
+
+    console.log('query:', query);
+
     try {
-      const { uid, status, reg } = req.query;
+      await PendingUserData.create(
+        {
+          uid,
+          registration: reg === 'true',
+        },
+      );
 
-      if (
-        typeof uid !== 'string' ||
-        typeof status !== 'string' ||
-        typeof reg !== 'string'
-      ) {
-        res.status(400).json({ error: 'Некорректные параметры' });
-        return;
-      }
-
-      const user = await User.findOne({ traderId: uid });
-
-      if (user) {
-        user.status = status;
-        user.registration = reg === 'true';
-        await user.save();
-      } else {
-        // Сохраняем во временную модель
-        await PendingUserData.findOneAndUpdate(
-          { uid },
-          { status, registration: reg === 'true' },
-          { upsert: true }
-        );
-      }
-
-      res.status(200).json({ message: 'Данные сохранены' });
+      res.status(200).json({ message: 'Дані збережено' });
     } catch (error) {
       console.error('Ошибка при сохранении данных:', error);
-      res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+      res.status(500).json({ error: 'Помилка збереження' });
     }
   }
 }
