@@ -1,14 +1,5 @@
 import { Context } from 'telegraf';
-type Timeframe =
-  | 's5'
-  | 's15'
-  | 's30'
-  | 'm1'
-  | 'm3'
-  | 'm5'
-  | 'm30'
-  | 'h1'
-  | 'h4';
+
 interface MySession {
   waitingForAdminId?: boolean;
   action?: string;
@@ -16,6 +7,9 @@ interface MySession {
   selectedTimeframe?: string;
   selectedType?: string;
   authorizedInQountex?: boolean;
+  waitingForTraderId?: boolean;
+  waitingForUserInfoId?: boolean;
+  waitingForSupportLink?: true | false;
 }
 
 export interface MyContext extends Context {

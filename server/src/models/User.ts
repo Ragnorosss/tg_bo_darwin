@@ -22,7 +22,7 @@ const userSchema = new Schema({
   joinedAt: { type: Date, default: Date.now },
   gaveAdminAccess: { type: Boolean, default: false },
   traderId: { type: String, required: true, unique: true },
-  status: { type: String, required: true },
+  status: { type: String},
   registration: { type: Boolean, required: true },
   createdAt: { type: Date, default: Date.now },
   role: {

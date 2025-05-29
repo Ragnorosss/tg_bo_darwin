@@ -68,13 +68,24 @@ export async function handleCallbackQuery(ctx: MyContext, data: string) {
       ctx.session.waitingForAdminId = true;
       ctx.session.action = 'revoke_access';
       break;
+    case 'show_user_info': {
+      ctx.session.waitingForUserInfoId = true;
 
+      await ctx.answerCbQuery();
+      await ctx.reply(
+        '🔍 Введіть Telegram ID користувача, інформацію про якого хочете отримати:',
+        Markup.inlineKeyboard([
+          [Markup.button.callback('❌ Відміна', 'show_main_menu')],
+        ])
+      );
+    }
+    break;
     case 'get_signal': {
       if (user?.qountexId === null && user.role.includes('user')) {
         return await ctx.reply(
           '❌ Ви не зареєстровані. Будь ласка, зареєструйтесь.',
           Markup.inlineKeyboard([
-            [Markup.button.callback('📝 Реєстрація', 'start_registration')],
+            [Markup.button.callback('📝 Реєстрація', 'show_reg_menu')],
             [
               Markup.button.callback(
                 'Написати в підтримку',
@@ -133,6 +144,7 @@ export async function handleCallbackQuery(ctx: MyContext, data: string) {
           [Markup.button.callback('Відміна', 'show_main_menu')],
         ])
       );
+      ctx.session.waitingForTraderId = true;
       break;
 
     case 'show_time_menu_stok':

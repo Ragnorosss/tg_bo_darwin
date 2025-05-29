@@ -11,5 +11,5 @@ userRouters.patch('/:telegramId/revoke-admin', UserController.RevokeAccessForID)
 userRouters.patch('/:telegramId/revoke-access', UserController.RevokeAccessForID);
 userRouters.patch('/:telegramId/add-access', UserController.GetAccessForUserID);
 userRouters.post('/test', UserController.handlePostback);
-
+userRouters.patch('/:telegramId/link-trader', UserController.linkTraderId);
 export default userRouters;

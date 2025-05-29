@@ -46,10 +46,6 @@ bot.command('start', async (ctx) => {
   }
   console.log(user);
 
-  if (typeof user?.role === 'string' && user.role.includes('admin')) {
-    await ctx.reply('Вы в роли администратора');
-    await ctx.reply('Админское меню:', adminMenu);
-  }
   await ctx.replyWithPhoto(
     { source: './src/assets/welcome.jpg' },
     {
@@ -69,7 +65,51 @@ bot.command('start', async (ctx) => {
       ]).reply_markup,
     }
   );
+  if (typeof user?.role === 'string' && user.role.includes('admin')) {
+    await ctx.reply('Вы в роли администратора');
+    await ctx.reply('Админское меню:', adminMenu);
+  }
 });
+
+bot.action('set_support_link', async (ctx) => {
+  ctx.session.waitingForSupportLink = true;
+
+  await ctx.answerCbQuery(); // закрываем "часики"
+  await ctx.reply(
+    '🔗 Введіть нове посилання на підтримку (наприклад: https://t.me/support)',
+    Markup.inlineKeyboard([
+      [Markup.button.callback('Відміна', 'show_main_menu')],
+    ])
+  );
+});
+
+bot.on('text', async (ctx) => {
+  if (!ctx.session.waitingForSupportLink) return;
+  const telegramId = ctx.from.id.toString();
+  const supportLink = ctx.message.text.trim();
+
+  try {
+    const response = await fetch(`${process.env.URL}support/set-support-link`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ telegramId, supportLink }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      await ctx.reply('✅ Посилання на підтримку оновлено успішно.');
+    } else {
+      await ctx.reply(`❌ Помилка: ${data.error || 'Невідома помилка.'}`);
+    }
+  } catch (error) {
+    console.error('❌ Помилка при встановленні посилання на підтримку:', error);
+    await ctx.reply('❌ Сталася помилка при відправці запиту.');
+  }
+
+  ctx.session.waitingForSupportLink = false;
+});
+
 bot.action('how_works_bot', async (ctx) => {
   const page = 0;
   await ctx.replyWithPhoto(
@@ -184,16 +224,75 @@ bot.action(/^select_pair_(.+)$/, async (ctx) => {
     }
   );
 });
+bot.command('find_user', async (ctx) => {
+  ctx.session.waitingForUserInfoId = true;
+  await ctx.reply(
+    `Введіть telegram ID користувача, щоб отримати інформацію.`,
+    Markup.inlineKeyboard([
+      [Markup.button.callback('Відміна', 'show_main_menu')],
+    ])
+  );
+});
+bot.on('text', async (ctx) => {
+  if (!ctx.session.waitingForUserInfoId) return;
+  const telegramId = ctx.from.id.toString();
+  const inputId = ctx.message.text.trim();
+  if (!/^\d+$/.test(inputId)) {
+    return ctx.reply('Введіть коректний числовий ID.');
+  }
+  const user = await fetch(`${process.env.URL}users/${telegramId}`);
+  const findUser: IUser = await user.json();
+  if (typeof findUser?.role === 'string' && findUser.role.includes('admin')) {
+    try {
+      const res = await fetch(`${process.env.URL}users/${inputId}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        return ctx.reply(
+          `❌ Помилка: ${data.error || 'Користувача не знайдено.'}`
+        );
+      }
+
+      const userInfo = `
+        👤 Інформація про користувача:
+    🆔 Telegram ID: ${data.telegramId}
+    📛 Ім'я: ${data.name || 'не вказано'}
+    👤 Роль: ${data.role}
+    🔗 Trader ID: ${data.traderId || "не прив'язаний"}
+    ✅ Зареєстрований: ${data.registration ? 'Так' : 'Ні'};`;
+
+      await ctx.reply(
+        userInfo,
+        Markup.inlineKeyboard([
+          [Markup.button.callback('🏠 В меню', 'show_main_menu')],
+        ])
+      );
+    } catch (err) {
+      console.error('Ошибка при получении пользователя:', err);
+      await ctx.reply('❌ Сталася помилка при отриманні інформації.');
+    }
+  }
+
+  ctx.session.waitingForUserInfoId = false;
+});
+bot.action('show_user_info', async (ctx) => {
+  ctx.session.waitingForUserInfoId = true;
+
+  await ctx.answerCbQuery();
+  await ctx.reply(
+    '🔍 Введіть Telegram ID користувача, інформацію про якого хочете отримати:',
+    Markup.inlineKeyboard([
+      [Markup.button.callback('❌ Відміна', 'show_main_menu')],
+    ])
+  );
+});
 
 bot.action('get_support_link', async (ctx) => {
   try {
-    const response = await fetch(
-      `${process.env.URL}support/get-support-link`,
-      {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    const response = await fetch(`${process.env.URL}support/get-support-link`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
     if (!response.ok) {
       const text = await response.text(); // вместо json, чтобы увидеть ошибку
       console.error(`Ошибка ${response.status}: ${text}`);
@@ -298,6 +397,70 @@ bot.on('callback_query', async (ctx) => {
     return;
   }
 });
+bot.action('show_reg_menu', async (ctx) => {
+  // Помечаем в сессии, что пользователь сейчас вводит traderId
+  ctx.session.waitingForTraderId = true;
+
+  await ctx.answerCbQuery(); // закрываем "часики" на кнопке
+  await ctx.reply(
+    `Введіть ваш ID, який знаходиться у вашому профілі (Наприклад: 46230574)`,
+    Markup.inlineKeyboard([
+      [Markup.button.callback('Написати в підтримку', 'get_support_link')],
+      [Markup.button.callback('Відміна', 'show_main_menu')],
+    ])
+  );
+});
+
+bot.on('text', async (ctx) => {
+  if (!ctx.session.waitingForTraderId) return;
+
+  const inputId = ctx.message.text.trim();
+
+  if (!/^\d+$/.test(inputId)) {
+    return ctx.reply('Пожалуйста, введите корректный числовой ID.');
+  }
+
+  try {
+    const telegramId = ctx.from.id.toString();
+
+    const res = await fetch(
+      `${process.env.URL}users/${telegramId}/link-trader`,
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ traderId: inputId }),
+      }
+    );
+
+    const text = await res.text();
+    console.log('Ответ сервера:', text);
+
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      await ctx.reply('Сервер вернул неожиданный ответ');
+      ctx.session.waitingForTraderId = false;
+      return;
+    }
+
+    if (res.ok) {
+      await ctx.reply(
+        `✅ Ваш ID (${inputId}) успішно зв’язано з вашим профілем.`,
+        Markup.inlineKeyboard([
+          [Markup.button.callback('🔙 Назад', 'show_main_menu')],
+        ])
+      );
+    } else {
+      await ctx.reply(`❌ Помилка: ${data.error || 'Не вдалося зв’язати ID.'}`);
+    }
+  } catch (error) {
+    console.error('❌ Error linking trader ID:', error);
+    await ctx.reply('❌ Сталася помилка при обробці запиту.');
+  }
+
+  ctx.session.waitingForTraderId = false;
+});
 
 bot.on('text', async (ctx) => {
   if (!ctx.session.waitingForAdminId || !ctx.session.action) return;
@@ -326,20 +489,6 @@ bot.on('text', async (ctx) => {
     ctx.session.waitingForAdminId = false;
     ctx.session.action = undefined;
     return ctx.reply(`Пользователь с ID ${inputId} не найден.`);
-  }
-
-  if (
-    ctx.session.action === 'get_signal' &&
-    ctx.session.authorizedInQountex === false &&
-    user?.qountexId === null
-  ) {
-    return await ctx.reply(
-      '❌ Вы не зарегистрированы. Пожалуйста, зарегистрируйтесь.',
-      Markup.inlineKeyboard([
-        [Markup.button.callback('📝 Регистрация', 'start_registration')],
-        [Markup.button.callback('🏠 В меню', 'show_main_menu')],
-      ])
-    );
   }
 
   try {

@@ -1,3 +1,4 @@
+import { PendingUserData } from '../models/Trader';
 import { User } from '../models/User';
 interface PostbackData {
   uid: string;
@@ -69,11 +70,34 @@ export class UserService {
     await user.save();
     return user;
   }
+  static async linkTraderIdToUser(telegramId: string, traderId: string) {
+    // Найти пользователя по telegramId
+    const user = await User.findOne({ telegramId });
+    console.log(user);
 
+    if (!user) {
+      throw new Error('Пользователь не найден');
+    }
+
+    // Проверить, есть ли такой traderId в Referral (или другой модели)
+    const referralRecord = await PendingUserData.findOne({ uid: traderId });
+    if (!referralRecord) {
+      throw new Error('Trader ID не найден в записях');
+    }
+
+    // Обновить пользователя
+    user.traderId = traderId;
+    user.qountexId = +traderId;
+    user.status = 'active';
+    user.registration = true;
+    await user.save();
+
+    return user;
+  }
   static async savePostbackData(data: PostbackData) {
     const { uid, status, registration } = data;
     console.log(uid, status, registration);
-      
+
     const regFlag = registration === 'true';
 
     const user = await User.findOne({ traderId: uid });

@@ -1,8 +1,24 @@
 import { Request, Response } from 'express';
 import { UserService } from '../service/user.service';
 import { User } from '../models/User';
+import { PendingUserData } from '../models/Trader';
 
 export class UserController {
+  static async linkTraderId(req: Request, res: Response) {
+    const { telegramId } = req.params;
+    const { traderId } = req.body;
+
+    if (typeof traderId !== 'string') {
+      res.status(400).json({ error: 'Неверный формат traderId' });
+    }
+
+    try {
+      const user = await UserService.linkTraderIdToUser(telegramId, traderId);
+      res.json({ message: 'Пользователь обновлён', user });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  }
   static async GetAccessForUserID(req: Request, res: Response) {
     try {
       const { telegramId } = req.params;
@@ -72,12 +88,9 @@ export class UserController {
     }
   }
   static async handlePostback(req: Request, res: Response): Promise<void> {
-    const { uid, status, reg } = req.query;
-    console.log(req.query);
-    
-    console.log(uid, status, reg);
     try {
-      
+      const { uid, status, reg } = req.query;
+
       if (
         typeof uid !== 'string' ||
         typeof status !== 'string' ||
@@ -87,11 +100,20 @@ export class UserController {
         return;
       }
 
-      await UserService.savePostbackData({
-        uid,
-        status,
-        registration: reg,
-      });
+      const user = await User.findOne({ traderId: uid });
+
+      if (user) {
+        user.status = status;
+        user.registration = reg === 'true';
+        await user.save();
+      } else {
+        // Сохраняем во временную модель
+        await PendingUserData.findOneAndUpdate(
+          { uid },
+          { status, registration: reg === 'true' },
+          { upsert: true }
+        );
+      }
 
       res.status(200).json({ message: 'Данные сохранены' });
     } catch (error) {
