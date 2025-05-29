@@ -75,19 +75,12 @@ export class UserService {
 
     const regFlag = registration === 'true';
 
-    let user = await User.findOne({ traderId: uid });
+    const user = await User.findOne({ traderId: uid });
 
     if (user) {
+      user.traderId = uid;
       user.status = status;
       user.registration = regFlag;
-      await user.save();
-    } else {
-      // Создаем нового пользователя
-      user = new User({
-        traderId: uid,
-        status,
-        registration: regFlag,
-      });
       await user.save();
     }
 
