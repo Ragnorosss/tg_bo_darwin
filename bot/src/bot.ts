@@ -7,12 +7,10 @@ import { pages } from './components/what_bot_can';
 import { generatePairButtons } from './utils/btn_generate';
 import { getPaginationKeyboard } from './utils/pagintaion';
 import fs from 'fs';
-import {
-  formatLeaderboardPage,
-  paginateUsers,
-} from './utils/leaderboard';
+import { formatLeaderboardPage, paginateUsers } from './utils/leaderboard';
 import { topUsers } from './components/top-user';
 import { getPaginationKeyboardUsers } from './utils/pag-top-user';
+import { generateMarketSignal } from './utils/generateMark';
 
 dotenv.config();
 
@@ -22,44 +20,11 @@ const bot = new Telegraf<MyContext>(BOT_TOKEN);
 bot.use(session());
 
 bot.launch();
-const images = {
-  up: './src/assets/up.png',
-  down: './src/assets/down.png',
-};
-
-function generateMarketSignal(pair: string) {
-  const directions = [
-    { text: 'ВЫШЕ ↑', emoji: '📈', img: images.up },
-    { text: 'НИЖЕ ↓', emoji: '📉', img: images.down },
-  ];
-  const risks = ['Low risk', 'Moderate risk', 'High risk'];
-
-  const randomPercent = (Math.random() * (1.5 - 0.1) + 0.1).toFixed(2);
-  const direction = directions[Math.floor(Math.random() * directions.length)];
-  const risk = risks[Math.floor(Math.random() * risks.length)];
-
-  const marketOverview =
-    '• Волатильность: Moderate • Настроения: Bearish • Объём: Spiked';
-  const tradingViewRating =
-    '• Сводка: STRONG SELL • Скользящие средние: SELL • Осцилляторы: BUY';
-  const technicalAnalysis =
-    '• RSI (14): Topping Out • MACD: Bullish Crossover • Полосы Боллинджера: Whipsaw Reactions • Pattern: Double Top';
-
-  const text = `${pair} Прогноз (+${randomPercent}%) ${direction.text} (${risk})
-
-Обзор рынка: ${marketOverview}
-
-Рейтинг TradingView: ${tradingViewRating}
-
-Технический анализ: ${technicalAnalysis}`;
-
-  return { text, imgPath: direction.img };
-}
 
 bot.start(async (ctx) => {
   const telegramId = String(ctx.from.id);
 
-  const res = await fetch(`http://localhost:3000/users`, {
+  const res = await fetch(`${process.env.URL}/users`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -97,7 +62,7 @@ bot.start(async (ctx) => {
   );
 
   if (!user) {
-    await fetch(`http://localhost:3000/users`, {
+    await fetch(`${process.env.URL}/users`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -133,7 +98,10 @@ bot.action('leader_boards', async (ctx) => {
     pageIndex * pageSize
   )}`;
 
-  await ctx.editMessageText(text, getPaginationKeyboardUsers(pageIndex, pages.length));
+  await ctx.editMessageText(
+    text,
+    getPaginationKeyboardUsers(pageIndex, pages.length)
+  );
 });
 
 // Обработчик переключения страниц лидерборда
@@ -152,7 +120,10 @@ bot.action(/leader_page_(\d+)/, async (ctx) => {
     pageIndex * pageSize
   )}`;
 
-  await ctx.editMessageText(text, getPaginationKeyboardUsers(pageIndex, pages.length));
+  await ctx.editMessageText(
+    text,
+    getPaginationKeyboardUsers(pageIndex, pages.length)
+  );
 
   await ctx.answerCbQuery();
 });
@@ -204,7 +175,7 @@ bot.action(/^select_pair_(.+)$/, async (ctx) => {
 bot.action('get_support_link', async (ctx) => {
   try {
     const response = await fetch(
-      'http://localhost:3000/support/get-support-link'
+      `${process.env.URL}users/support/get-support-link`
     ); // или твой продовый URL
     const data = await response.json();
 
@@ -316,8 +287,7 @@ bot.on('text', async (ctx) => {
 
   const telegramId = inputId;
 
-  // Получаем пользователя
-  const res = await fetch(`http://localhost:3000/users`, {
+  const res = await fetch(`${process.env.URL}/users`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -349,26 +319,66 @@ bot.on('text', async (ctx) => {
     );
   }
 
-  if (ctx.session.action === 'give_admin') {
-    if (user.role !== 'admin') {
-      await fetch(`http://localhost:3000/users/${telegramId}/admin`, {
-        method: 'PATCH',
-      });
-      await ctx.reply(`✅ Админка выдана пользователю с ID ${inputId}.`);
-    } else {
-      await ctx.reply(`ℹ️ Пользователь с ID ${inputId} уже админ.`);
+  try {
+    switch (ctx.session.action) {
+      case 'give_admin':
+        if (user.role !== 'admin') {
+          await fetch(`${process.env.URL}/users/${telegramId}/admin`, {
+            method: 'PATCH',
+          });
+          await ctx.reply(`✅ Адмінка надана користувачу з ID ${inputId}.`);
+        } else {
+          await ctx.reply(`ℹ️ Користувач з ID ${inputId} вже має адмінку.`);
+        }
+        break;
+
+      case 'revoke_admin':
+        if (user.role === 'admin') {
+          await fetch(
+            `${process.env.URL}/users/${telegramId}/revoke-admin`,
+            {
+              method: 'PATCH',
+            }
+          );
+          await ctx.reply(`✅ Адмінка видалена у користувача з ID ${inputId}.`);
+        } else {
+          await ctx.reply(`ℹ️ Користувач з ID ${inputId} не має адмінки.`);
+        }
+        break;
+
+      case 'grant_access':
+        if (user.gaveAdminAccess !== true) {
+          await fetch(`${process.env.URL}/users/${telegramId}/add-access`, {
+            method: 'PATCH',
+          });
+          await ctx.reply(`✅ Доступ надано користувачу з ID ${inputId}.`);
+        } else {
+          await ctx.reply(`ℹ️ Користувач з ID ${inputId} вже має доступ.`);
+        }
+        break;
+
+      case 'revoke_access':
+        if (user.gaveAdminAccess === true) {
+          await fetch(
+            `${process.env.URL}/users/${telegramId}/revoke-access`,
+            {
+              method: 'PATCH',
+            }
+          );
+          await ctx.reply(
+            `✅ Доступ відкликано у користувача з ID ${inputId}.`
+          );
+        } else {
+          await ctx.reply(`ℹ️ Користувач з ID ${inputId} не має доступу.`);
+        }
+        break;
     }
-  } else if (ctx.session.action === 'revoke_admin') {
-    if (user.role === 'admin') {
-      await fetch(`http://localhost:3000/users/${telegramId}/revoke-admin`, {
-        method: 'PATCH',
-      });
-      await ctx.reply(`✅ Админка удалена у пользователя с ID ${inputId}.`);
-    } else {
-      await ctx.reply(`ℹ️ Пользователь с ID ${inputId} не является админом.`);
-    }
+  } catch (error) {
+    console.error('❌ Error handling admin action:', error);
+    await ctx.reply('❌ Сталася помилка при обробці запиту.');
   }
 
+  // Сброс состояния
   ctx.session.waitingForAdminId = false;
   ctx.session.action = undefined;
 });

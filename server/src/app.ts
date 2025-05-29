@@ -5,10 +5,7 @@ import supportRouters from './routes/support.route';
 
 export const app = express();
 
-app.use(cors({
-    origin: '*',
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-}));
+app.use(cors());
 app.use(express.json());
 
 app.use('/users', userRouters);

@@ -3,26 +3,10 @@ import { UserService } from '../service/user.service';
 import { User } from '../models/User';
 
 export class UserController {
-  static async GetInfoTrader(req: Request, res: Response) {
-    try {
-      const userId = req.params.id;
-      const tradeId = req.query.trade_id as string;
-
-      console.log('User ID:', userId);
-      console.log('Trade ID:', tradeId);
-
-      console.log('Sending 200 response');
-      res.status(200).json({ userId, tradeId });
-      console.log('Response sent');
-    } catch (e) {
-      console.error(e);
-      res.status(500).json({ message: 'Ошибка сервера' });
-    }
-  }
-  static async GetAccessForMe(req: Request, res: Response) {
+  static async GetAccessForUserID(req: Request, res: Response) {
     try {
       const { telegramId } = req.params;
-      const user = await UserService.GetAccessForMe(telegramId);
+      const user = await UserService.giveAdminAccess(telegramId);
       res.status(200).json(user);
     } catch (error) {
       console.error(error);
@@ -75,7 +59,7 @@ export class UserController {
     }
   }
 
-  static async revokeAdmin(req: Request, res: Response) {
+  async revokeAdmin(req: Request, res: Response) {
     try {
       const { telegramId } = req.params;
       const user = await UserService.setRole(telegramId, 'user');
@@ -83,6 +67,31 @@ export class UserController {
     } catch (e) {
       console.error(e);
       res.status(500).json({ message: 'Ошибка сервера' });
+    }
+  }
+  static async handlePostback(req: Request, res: Response): Promise<void> {
+    try {
+      const { uid, status, reg } = req.query;
+
+      if (
+        typeof uid !== 'string' ||
+        typeof status !== 'string' ||
+        typeof reg !== 'string'
+      ) {
+        res.status(400).json({ error: 'Некорректные параметры' });
+        return;
+      }
+
+      await UserService.savePostbackData({
+        uid,
+        status,
+        registration: reg,
+      });
+
+      res.status(200).json({ message: 'Данные сохранены' });
+    } catch (error) {
+      console.error('Ошибка при сохранении данных:', error);
+      res.status(500).json({ error: 'Внутренняя ошибка сервера' });
     }
   }
 }

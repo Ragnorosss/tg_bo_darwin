@@ -1,5 +1,9 @@
 import { User } from '../models/User';
-
+interface PostbackData {
+  uid: string;
+  status: string;
+  registration: string; // будет 'true' или 'false' в строке
+}
 export class UserService {
   static async createOrFindUser(data: {
     telegramId: string;
@@ -24,28 +28,31 @@ export class UserService {
     if (!user) throw new Error('Пользователь не найден');
 
     if (user.role === 'admin') {
-      return { message: 'Пользователь уже админ', user };
+      return { message: 'Користувач вже має роль admin', user };
     }
 
-    user.role = 'admin';
+    // Роль не admin — просто даём доступ
+    user.gaveAdminAccess = true;
     await user.save();
 
-    return { message: 'Роль admin выдана', user };
+    return { message: 'Доступ надано (без ролі admin)', user };
   }
 
   static async revokeAdminAccess(telegramId: string) {
     const user = await User.findOne({ telegramId });
     if (!user) throw new Error('Пользователь не найден');
 
-    if (user.role !== 'admin') {
-      return { message: 'Пользователь не является админом', user };
+    if (!user.gaveAdminAccess) {
+      return { message: 'Користувач не має доступу', user };
     }
 
-    user.role = 'user';
+    // Просто убираем флаг доступа
+    user.gaveAdminAccess = false;
     await user.save();
 
-    return { message: 'Роль admin забрана', user };
+    return { message: 'Доступ скасовано', user };
   }
+
   static async GetAccessForMe(telegramId: string) {
     const user = await User.findOne({ telegramId });
     if (!user) throw new Error('Пользователь не найден');
@@ -60,6 +67,30 @@ export class UserService {
 
     user.role = role;
     await user.save();
+    return user;
+  }
+
+  static async savePostbackData(data: PostbackData) {
+    const { uid, status, registration } = data;
+
+    const regFlag = registration === 'true';
+
+    let user = await User.findOne({ traderId: uid });
+
+    if (user) {
+      user.status = status;
+      user.registration = regFlag;
+      await user.save();
+    } else {
+      // Создаем нового пользователя
+      user = new User({
+        traderId: uid,
+        status,
+        registration: regFlag,
+      });
+      await user.save();
+    }
+
     return user;
   }
 }
