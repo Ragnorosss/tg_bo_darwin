@@ -72,7 +72,8 @@ export class UserService {
 
   static async savePostbackData(data: PostbackData) {
     const { uid, status, registration } = data;
-
+    console.log(uid, status, registration);
+      
     const regFlag = registration === 'true';
 
     const user = await User.findOne({ traderId: uid });

@@ -72,9 +72,12 @@ export class UserController {
     }
   }
   static async handlePostback(req: Request, res: Response): Promise<void> {
+    const { uid, status, reg } = req.query;
+    console.log(req.query);
+    
+    console.log(uid, status, reg);
     try {
-      const { uid, status, reg } = req.query;
-
+      
       if (
         typeof uid !== 'string' ||
         typeof status !== 'string' ||
