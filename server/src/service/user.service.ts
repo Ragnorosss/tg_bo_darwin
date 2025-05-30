@@ -6,6 +6,7 @@ interface PostbackData {
   registration: string; // будет 'true' или 'false' в строке
 }
 export class UserService {
+  static async getInfo(){}
   static async createOrFindUser(data: {
     telegramId: string;
     username?: string;
@@ -68,6 +69,8 @@ export class UserService {
 
     user.role = role;
     await user.save();
+    console.log('Админ', user);
+    
     return user;
   }
   static async linkTraderIdToUser(telegramId: string, traderId: string) {

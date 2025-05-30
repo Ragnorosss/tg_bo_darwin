@@ -37,18 +37,6 @@ export async function handleCallbackQuery(ctx: MyContext, data: string) {
       ctx.session.action = 'revoke_admin';
       break;
 
-    case 'set_support_link':
-      await ctx.answerCbQuery('Посилання на підтримку встановлено');
-      break;
-
-    case 'get_user_info':
-      await ctx.answerCbQuery('Інформація про користувача отримана');
-      break;
-
-    case 'search_project_by_id':
-      await ctx.answerCbQuery('Пошук проєкту розпочато');
-      break;
-
     case 'grant_access_self':
       await ctx.answerCbQuery('Доступ надано собі');
       break;
@@ -63,23 +51,27 @@ export async function handleCallbackQuery(ctx: MyContext, data: string) {
     // Отзыв доступа (без роли admin)
     case 'revoke_access_by_id':
       await ctx.reply(
-        'Введіть Telegram ID користувача, у якого хочете відкликати доступ:'
-      );
-      ctx.session.waitingForAdminId = true;
-      ctx.session.action = 'revoke_access';
-      break;
-    case 'show_user_info': {
-      ctx.session.waitingForUserInfoId = true;
-
-      await ctx.answerCbQuery();
-      await ctx.reply(
-        '🔍 Введіть Telegram ID користувача, інформацію про якого хочете отримати:',
+        'Введіть Telegram ID користувача, у якого хочете відкликати доступ:',
         Markup.inlineKeyboard([
           [Markup.button.callback('❌ Відміна', 'show_main_menu')],
         ])
       );
-    }
-    break;
+      ctx.session.waitingForAdminId = true;
+      ctx.session.action = 'revoke_access';
+      break;
+    case 'show_user_info':
+      {
+        ctx.session.waitingForUserInfoId = true;
+
+        await ctx.answerCbQuery();
+        await ctx.reply(
+          '🔍 Введіть Telegram ID користувача, інформацію про якого хочете отримати:',
+          Markup.inlineKeyboard([
+            [Markup.button.callback('❌ Відміна', 'show_main_menu')],
+          ])
+        );
+      }
+      break;
     case 'get_signal': {
       if (user?.qountexId === null && user.role.includes('user')) {
         return await ctx.reply(
@@ -112,27 +104,50 @@ export async function handleCallbackQuery(ctx: MyContext, data: string) {
     }
 
     case 'show_main_menu':
-      await ctx.replyWithHTML(
-        `🔑 Щоб отримати повний доступ до нашого робота з більш ніж 100 активами, Вам потрібно створити <b>НОВИЙ АККАУНТ</b> у брокера Quotex строго за посиланням 🔗\n\n
-❗ <b>Увага!</b> Навіть якщо у Вас уже є акаунт — потрібно створити <b>НОВИЙ</b> за посиланням нижче. Інакше бот не зможе перевірити акаунт, і Ви не отримаєте доступ до бота ❗\n\n
-👉 <a href="https://broker-qx.pro/sign-up/fast/?lid=1367279&click_id={cid}&site_id={sid}">Зареєструватись на Quotex</a>\n\n
-⚠️ <b>Важливо:</b> не давайте нікому свій ID, оскільки бот видається тільки на 1 акаунт.\n\n
-Якщо Вам потрібно щось ще, дайте знати! 😉`,
-        Markup.inlineKeyboard([
-          [
-            Markup.button.callback('📡 Отримати сигнал', 'get_signal'),
-            Markup.button.callback('🤖 Як працює бот?', 'how_works_bot'),
-          ],
-          [
-            Markup.button.callback('🏆 Лідерборд', 'leader_boards'),
-            Markup.button.callback(
-              '✉️ Написати в підтримку',
-              'get_support_link'
-            ),
-          ],
-          [Markup.button.callback('🔙 Назад', 'show_main_menu')],
-        ])
-      );
+      if (user.role.includes('admin')) {
+        await ctx.replyWithHTML(
+          `🔑 Щоб отримати повний доступ до нашого робота з більш ніж 100 активами, Вам потрібно створити <b>НОВИЙ АККАУНТ</b> у брокера Quotex строго за посиланням 🔗\n\n
+  ❗ <b>Увага!</b> Навіть якщо у Вас уже є акаунт — потрібно створити <b>НОВИЙ</b> за посиланням нижче. Інакше бот не зможе перевірити акаунт, і Ви не отримаєте доступ до бота ❗\n\n
+  👉 <a href="https://broker-qx.pro/sign-up/fast/?lid=1367279&click_id={cid}&site_id={sid}">Зареєструватись на Quotex</a>\n\n
+  ⚠️ <b>Важливо:</b> не давайте нікому свій ID, оскільки бот видається тільки на 1 акаунт.\n\n
+  Якщо Вам потрібно щось ще, дайте знати! 😉`,
+          Markup.inlineKeyboard([
+            [
+              Markup.button.callback('📡 Отримати сигнал', 'get_signal'),
+              Markup.button.callback('🤖 Як працює бот?', 'how_works_bot'),
+            ],
+            [
+              Markup.button.callback('🏆 Лідерборд', 'leader_boards'),
+              Markup.button.callback(
+                '✉️ Написати в підтримку',
+                'get_support_link'
+              ),
+              Markup.button.callback('Адмін меню', 'show_admin_menu'),
+            ],
+          ])
+        );
+      } else {
+        await ctx.replyWithHTML(
+          `🔑 Щоб отримати повний доступ до нашого робота з більш ніж 100 активами, Вам потрібно створити <b>НОВИЙ АККАУНТ</b> у брокера Quotex строго за посиланням 🔗\n\n
+  ❗ <b>Увага!</b> Навіть якщо у Вас уже є акаунт — потрібно створити <b>НОВИЙ</b> за посиланням нижче. Інакше бот не зможе перевірити акаунт, і Ви не отримаєте доступ до бота ❗\n\n
+  👉 <a href="https://broker-qx.pro/sign-up/fast/?lid=1367279&click_id={cid}&site_id={sid}">Зареєструватись на Quotex</a>\n\n
+  ⚠️ <b>Важливо:</b> не давайте нікому свій ID, оскільки бот видається тільки на 1 акаунт.\n\n
+  Якщо Вам потрібно щось ще, дайте знати! 😉`,
+          Markup.inlineKeyboard([
+            [
+              Markup.button.callback('📡 Отримати сигнал', 'get_signal'),
+              Markup.button.callback('🤖 Як працює бот?', 'how_works_bot'),
+            ],
+            [
+              Markup.button.callback('🏆 Лідерборд', 'leader_boards'),
+              Markup.button.callback(
+                '✉️ Написати в підтримку',
+                'get_support_link'
+              ),
+            ],
+          ])
+        );
+      }
       break;
 
     case 'show_reg_menu':

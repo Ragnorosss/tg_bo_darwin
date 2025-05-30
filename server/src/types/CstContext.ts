@@ -9,7 +9,8 @@ interface MySession {
   authorizedInQountex?: boolean;
   waitingForTraderId?: boolean;
   waitingForUserInfoId?: boolean;
-  waitingForSupportLink?: true | false;
+  waitingForSupportLink?: boolean;
+  waitingForTradeId?: boolean;
 }
 
 export interface MyContext extends Context {

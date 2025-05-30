@@ -21,9 +21,9 @@ const userSchema = new Schema({
   qountexId: Number,
   joinedAt: { type: Date, default: Date.now },
   gaveAdminAccess: { type: Boolean, default: false },
-  traderId: { type: String, required: true, unique: true },
+  traderId: { type: String, unique: true },
   status: { type: String},
-  registration: { type: Boolean, required: true },
+  registration: { type: Boolean,},
   createdAt: { type: Date, default: Date.now },
   role: {
     type: String,

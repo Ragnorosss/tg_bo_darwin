@@ -4,6 +4,21 @@ import { User } from '../models/User';
 import { PendingUserData } from '../models/Trader';
 
 export class UserController {
+  static async getInfoByQountexId(req: Request, res: Response) {
+    const { qountexId } = req.params;
+    try {
+      const user = await User.findOne({
+        qountexId,
+      });
+      if (!user) {
+        res.status(404).json({ message: 'Пользователь не найден' });
+      }
+      res.json(user);
+    } catch (err) {
+      console.error('Ошибка при получении пользователя:', err); // 👈 ОБЯЗАТЕЛЬНО
+      res.status(500).json({ message: 'Ошибка сервера' });
+    }
+  }
   static async linkTraderId(req: Request, res: Response) {
     const { telegramId } = req.params;
     const { traderId } = req.body;
@@ -54,10 +69,11 @@ export class UserController {
   static async getUserByTelegramId(req: Request, res: Response) {
     const { telegramId } = req.params;
     try {
-      const user = await User.findOne({ telegramId });
+      const user = await User.findOne({
+        telegramId: telegramId,
+      });
       if (!user) {
         res.status(404).json({ message: 'Пользователь не найден' });
-        return;
       }
       res.json(user);
     } catch (err) {
@@ -96,12 +112,10 @@ export class UserController {
     console.log('query:', query);
 
     try {
-      await PendingUserData.create(
-        {
-          uid,
-          registration: reg === 'true',
-        },
-      );
+      await PendingUserData.create({
+        uid,
+        registration: reg === 'true',
+      });
 
       res.status(200).json({ message: 'Дані збережено' });
     } catch (error) {

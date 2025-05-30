@@ -9,9 +9,10 @@ export const adminMenu = Markup.inlineKeyboard([
       'set_support_link'
     ),
   ],
-  [Markup.button.callback('Пошук за ID проєкту', 'search_project_by_id')],
+  [Markup.button.callback('Пошук за ID проєкту', 'search_by_trade_id')],
   [Markup.button.callback('Надати доступ собі', 'grant_access_self')],
   [Markup.button.callback('Надати доступ за ID', 'grant_access_by_id')],
   [Markup.button.callback('Забрати доступ за ID', 'revoke_access_by_id')],
   [Markup.button.callback('Інформація про користувача', 'show_user_info')],
+  [Markup.button.callback('🏠 До головного меню', 'show_main_menu')],
 ]);

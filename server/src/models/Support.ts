@@ -1,7 +1,7 @@
 import { Schema, model } from 'mongoose';
 
 const supportLinkScema = new Schema({
-  telegramId: { type: String, required: true, unique: true },
+  telegramId: { type: String },
   link: { type: String },
 });
 
