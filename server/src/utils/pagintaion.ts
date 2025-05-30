@@ -8,7 +8,7 @@ export function getPaginationKeyboard(page: number) {
     buttons.push({ text: '⬅️ Назад', callback_data: `photo_page_${page - 1}` });
   }
   buttons.push({
-    text: `${page + 1} из ${totalPages}`,
+    text: `${page + 1} з ${totalPages}`,
     callback_data: 'page_counter',
   });
 

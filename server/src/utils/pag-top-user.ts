@@ -9,7 +9,7 @@ export function getPaginationKeyboardUsers(page: number, totalPages: number) {
   }
 
   buttons.push({
-    text: `${page + 1} из ${totalPages}`,
+    text: `${page + 1} з ${totalPages}`,
     callback_data: 'page_counter',
   });
 
