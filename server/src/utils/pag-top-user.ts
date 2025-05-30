@@ -1,6 +1,3 @@
-const pageSize = 5; // размер страницы — 5 юзеров
-
-// Функция генерации клавиатуры для лидеров, учитывающая totalPages
 export function getPaginationKeyboardUsers(page: number, totalPages: number) {
   const buttons = [];
 
@@ -12,7 +9,7 @@ export function getPaginationKeyboardUsers(page: number, totalPages: number) {
   }
 
   buttons.push({
-    text: `Страница ${page + 1} из ${totalPages}`,
+    text: `${page + 1} из ${totalPages}`,
     callback_data: 'page_counter',
   });
 

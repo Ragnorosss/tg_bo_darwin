@@ -1,8 +1,3 @@
-import { Telegraf } from 'telegraf';
-import { MyContext } from '../types/CstContext';
-import { getPaginationKeyboard } from './pagintaion';
-
-
 export function paginateUsers(users: any[], pageSize: number): any[][] {
   const pages = [];
   for (let i = 0; i < users.length; i += pageSize) {
@@ -22,7 +17,4 @@ export function formatLeaderboardPage(
         `${startIndex + i + 1}. ${u.nickname} — ${u.earnings.toLocaleString()}`
     )
     .join('\n');
-}
-export function BotLeaderBoard(bot: Telegraf<MyContext>) {
-
 }
