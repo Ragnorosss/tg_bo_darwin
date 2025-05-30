@@ -1,6 +1,7 @@
 import { Markup } from 'telegraf';
 import { MyContext } from '../types/CstContext';
 import dotenv from 'dotenv';
+import { isStockTradingTime } from './days_time_check';
 dotenv.config();
 export async function handleCallbackQuery(ctx: MyContext, data: string) {
   const telegramId = String(ctx?.from?.id);
@@ -89,12 +90,20 @@ export async function handleCallbackQuery(ctx: MyContext, data: string) {
         );
       }
 
+      const stockActive = isStockTradingTime();
       ctx.session.action = 'get_signal';
+
       await ctx.editMessageText(
-        'Нове меню:',
+        'Виберіть тип ринку:',
         Markup.inlineKeyboard([
           [
-            Markup.button.callback('STOK', 'show_time_menu_stok'),
+            stockActive
+              ? Markup.button.callback('STOK', 'show_time_menu_stok')
+              : Markup.button.callback(
+                  'STOK ❌ (заблоковано)',
+                  'blocked',
+                  false
+                ),
             Markup.button.callback('OCT', 'show_time_menu_oct'),
           ],
           [Markup.button.callback('Назад', 'show_main_menu')],
