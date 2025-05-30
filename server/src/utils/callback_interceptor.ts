@@ -88,7 +88,27 @@ export async function handleCallbackQuery(ctx: MyContext, data: string) {
       }
       break;
     case 'get_signal': {
-      if (user && !user.qountexId && user.role.includes('user') && user.gaveAdminAccess === false) {
+      const stockActive = isStockTradingTime();
+      ctx.session.action = 'get_signal';
+      if (user && !user.qountexId && user.role.includes('user')) {
+        if (user.gaveAdminAccess === true) {
+          await ctx.editMessageText(
+            'Виберіть тип ринку:',
+            Markup.inlineKeyboard([
+              [
+                stockActive
+                  ? Markup.button.callback('STOK', 'show_time_menu_stok')
+                  : Markup.button.callback(
+                      'STOK ❌ (заблоковано)',
+                      'blocked',
+                      false
+                    ),
+                Markup.button.callback('OCT', 'show_time_menu_oct'),
+              ],
+              [Markup.button.callback('Назад', 'show_main_menu')],
+            ])
+          );
+        }
         return await ctx.reply(
           '❌ Ви не зареєстровані. Будь ласка, зареєструйтесь.',
           Markup.inlineKeyboard([
@@ -103,9 +123,6 @@ export async function handleCallbackQuery(ctx: MyContext, data: string) {
           ])
         );
       }
-
-      const stockActive = isStockTradingTime();
-      ctx.session.action = 'get_signal';
 
       await ctx.editMessageText(
         'Виберіть тип ринку:',
