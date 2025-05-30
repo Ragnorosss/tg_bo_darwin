@@ -21,30 +21,23 @@ bot.use(session());
 
 bot.command('start', async (ctx) => {
   const telegramId = String(ctx.from.id);
-
-  const res = await fetch(`${process.env.URL}users/${telegramId}`, {
-    method: 'GET',
+  const res = await fetch(`${process.env.URL}users/create`, {
+    method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      telegramId: telegramId,
+      username: ctx.from.username,
+      firstName: ctx.from.first_name,
+    }),
   });
+
   if (!res.ok) {
     const text = await res.text(); // вместо json, чтобы увидеть ошибку
     console.error(`Ошибка ${res.status}: ${text}`);
     await ctx.reply('Проблема с получением пользователя');
     return;
   }
-  const user: IUser = await res.json();
-  if (!user) {
-    await fetch(`${process.env.URL}/users`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        telegramId,
-        username: ctx.from.username,
-        firstName: ctx.from.first_name,
-      }),
-    });
-  }
-  console.log(user);
+
   await ctx.replyWithPhoto(
     { source: './src/assets/welcome.jpg' },
     {
@@ -76,7 +69,8 @@ bot.action('set_support_link', async (ctx) => {
   await ctx.reply(
     '🔗 Введіть нове посилання на підтримку (наприклад: https://t.me/support)',
     Markup.inlineKeyboard([
-      [Markup.button.callback('Відміна', 'show_main_menu')],
+      [Markup.button.callback('🏠 До головного меню', 'show_main_menu')],
+      [Markup.button.callback('Адмін меню', 'show_admin_menu')],
     ])
   );
 });
@@ -99,7 +93,8 @@ bot.action('search_by_trade_id', async (ctx) => {
   await ctx.reply(
     '🔍 Введіть trade_id для пошуку проєкту:',
     Markup.inlineKeyboard([
-      [Markup.button.callback('❌ Відміна', 'show_main_menu')],
+      [Markup.button.callback('🏠 До головного меню', 'show_main_menu')],
+      [Markup.button.callback('Адмін меню', 'show_admin_menu')],
     ])
   );
 });
@@ -212,7 +207,18 @@ bot.on('text', async (ctx) => {
       switch (ctx.session.action) {
         case 'give_admin':
           if (user.role === 'admin') {
-            return ctx.reply(`ℹ️ Користувач з ID ${inputId} вже має адмінку.`);
+            return ctx.reply(
+              `ℹ️ Користувач з ID ${inputId} вже має адмінку.`,
+              Markup.inlineKeyboard([
+                [
+                  Markup.button.callback(
+                    '🏠 До головного меню',
+                    'show_main_menu'
+                  ),
+                ],
+                [Markup.button.callback('Адмін меню', 'show_admin_menu')],
+              ])
+            );
           }
 
           try {
@@ -229,7 +235,18 @@ bot.on('text', async (ctx) => {
               return ctx.reply('❌ Проблема з видачею адмінки.');
             }
 
-            return ctx.reply(`✅ Адмінка надана користувачу з ID ${inputId}.`);
+            return ctx.reply(
+              `✅ Адмінка надана користувачу з ID ${inputId}.`,
+              Markup.inlineKeyboard([
+                [
+                  Markup.button.callback(
+                    '🏠 До головного меню',
+                    'show_main_menu'
+                  ),
+                ],
+                [Markup.button.callback('Адмін меню', 'show_admin_menu')],
+              ])
+            );
           } catch (err) {
             console.error('❌ Помилка при видачі адмінки:', err);
             return ctx.reply('❌ Сталася помилка при обробці запиту.');
@@ -267,7 +284,18 @@ bot.on('text', async (ctx) => {
             await fetch(`${process.env.URL}users/${inputId}/add-access`, {
               method: 'PATCH',
             });
-            return ctx.reply(`✅ Доступ надано користувачу з ID ${inputId}.`);
+            return ctx.reply(
+              `✅ Доступ надано користувачу з ID ${inputId}.`,
+              Markup.inlineKeyboard([
+                [
+                  Markup.button.callback(
+                    '🏠 До головного меню',
+                    'show_main_menu'
+                  ),
+                ],
+                [Markup.button.callback('Адмін меню', 'show_admin_menu')],
+              ])
+            );
           } else {
             return ctx.reply(`ℹ️ Користувач з ID ${inputId} вже має доступ.`);
           }
@@ -278,7 +306,16 @@ bot.on('text', async (ctx) => {
               method: 'PATCH',
             });
             return ctx.reply(
-              `✅ Доступ відкликано у користувача з ID ${inputId}.`
+              `✅ Доступ відкликано у користувача з ID ${inputId}.`,
+              Markup.inlineKeyboard([
+                [
+                  Markup.button.callback(
+                    '🏠 До головного меню',
+                    'show_main_menu'
+                  ),
+                ],
+                [Markup.button.callback('Адмін меню', 'show_admin_menu')],
+              ])
             );
           } else {
             return ctx.reply(`ℹ️ Користувач з ID ${inputId} не має доступу.`);
@@ -303,7 +340,13 @@ bot.on('text', async (ctx) => {
         return ctx.reply('❌ Не вдалося знайти проект за trade_id.');
       }
 
-      await ctx.reply(`✅ Проект з trade_id ${inputId} успішно знайдено.`);
+      await ctx.reply(
+        `✅ Проект з trade_id ${inputId} успішно знайдено.`,
+        Markup.inlineKeyboard([
+          [Markup.button.callback('🏠 До головного меню', 'show_main_menu')],
+          [Markup.button.callback('Адмін меню', 'show_admin_menu')],
+        ])
+      );
       const data = await res.json();
       const userInfo = `
 👤 Інформація про користувача:

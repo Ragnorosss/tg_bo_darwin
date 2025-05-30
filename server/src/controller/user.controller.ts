@@ -57,8 +57,9 @@ export class UserController {
   }
 
   static async createUser(req: Request, res: Response) {
+    const body = req.body;
     try {
-      const user = await UserService.createOrFindUser(req.body);
+      const user = await UserService.createOrFindUser(body);
       res.json(user);
     } catch (e) {
       console.error(e);
@@ -69,16 +70,17 @@ export class UserController {
   static async getUserByTelegramId(req: Request, res: Response) {
     const { telegramId } = req.params;
     try {
-      const user = await User.findOne({
-        telegramId: telegramId,
-      });
+      const user = await User.findOne({ telegramId });
+
       if (!user) {
         res.status(404).json({ message: 'Пользователь не найден' });
+        return;
       }
+
       res.json(user);
     } catch (err) {
-      console.error('Ошибка при получении пользователя:', err); // 👈 ОБЯЗАТЕЛЬНО
-      res.status(500).json({ message: 'Ошибка сервера' });
+      console.error('Ошибка при получении пользователя:', err);
+       res.status(500).json({ message: 'Ошибка сервера' });
     }
   }
 
@@ -104,12 +106,10 @@ export class UserController {
     }
   }
   static async handlePostback(req: Request, res: Response): Promise<void> {
-    const query = req.query;
+    const body = req.body;
 
-    const uid = String(query.uid);
-    const reg = String(query.reg);
-
-    console.log('query:', query);
+    const uid = String(body.uid);
+    const reg = String(body.req);
 
     try {
       await PendingUserData.create({

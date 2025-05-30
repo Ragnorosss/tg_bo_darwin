@@ -23,7 +23,11 @@ export async function handleCallbackQuery(ctx: MyContext, data: string) {
     case 'give_admin':
       await ctx.answerCbQuery('Адмінка видана');
       await ctx.reply(
-        'Введіть Telegram ID користувача, якому хочете видати адмінку:'
+        'Введіть Telegram ID користувача, якому хочете видати адмінку:',
+        Markup.inlineKeyboard([
+          [Markup.button.callback('🏠 До головного меню', 'show_main_menu')],
+          [Markup.button.callback('Адмін меню', 'show_admin_menu')],
+        ])
       );
       ctx.session.waitingForAdminId = true;
       ctx.session.action = 'give_admin';
@@ -32,7 +36,11 @@ export async function handleCallbackQuery(ctx: MyContext, data: string) {
     case 'revoke_admin':
       await ctx.answerCbQuery('Адмінка відкликана');
       await ctx.reply(
-        'Введіть Telegram ID користувача, у якого хочете забрати адмінку:'
+        'Введіть Telegram ID користувача, у якого хочете забрати адмінку:',
+        Markup.inlineKeyboard([
+          [Markup.button.callback('❌ Відміна', 'show_main_menu')],
+          [Markup.button.callback('Адмін меню', 'show_admin_menu')],
+        ])
       );
       ctx.session.waitingForAdminId = true;
       ctx.session.action = 'revoke_admin';
@@ -43,7 +51,11 @@ export async function handleCallbackQuery(ctx: MyContext, data: string) {
       break;
     case 'grant_access_by_id':
       await ctx.reply(
-        'Введіть Telegram ID користувача, якому хочете надати доступ:'
+        'Введіть Telegram ID користувача, якому хочете надати доступ:',
+        Markup.inlineKeyboard([
+          [Markup.button.callback('❌ Відміна', 'show_main_menu')],
+          [Markup.button.callback('Адмін меню', 'show_admin_menu')],
+        ])
       );
       ctx.session.waitingForAdminId = true;
       ctx.session.action = 'grant_access';
@@ -55,6 +67,7 @@ export async function handleCallbackQuery(ctx: MyContext, data: string) {
         'Введіть Telegram ID користувача, у якого хочете відкликати доступ:',
         Markup.inlineKeyboard([
           [Markup.button.callback('❌ Відміна', 'show_main_menu')],
+          [Markup.button.callback('Адмін меню', 'show_admin_menu')],
         ])
       );
       ctx.session.waitingForAdminId = true;
@@ -69,12 +82,13 @@ export async function handleCallbackQuery(ctx: MyContext, data: string) {
           '🔍 Введіть Telegram ID користувача, інформацію про якого хочете отримати:',
           Markup.inlineKeyboard([
             [Markup.button.callback('❌ Відміна', 'show_main_menu')],
+            [Markup.button.callback('Адмін меню', 'show_admin_menu')],
           ])
         );
       }
       break;
     case 'get_signal': {
-      if (user?.qountexId === null && user.role.includes('user')) {
+      if (user && !user.qountexId && user.role.includes('user')) {
         return await ctx.reply(
           '❌ Ви не зареєстровані. Будь ласка, зареєструйтесь.',
           Markup.inlineKeyboard([
@@ -113,6 +127,19 @@ export async function handleCallbackQuery(ctx: MyContext, data: string) {
     }
 
     case 'show_main_menu':
+      if (ctx.session) {
+        ctx.session.waitingForAdminId = false;
+        ctx.session.waitingForTraderId = false;
+        ctx.session.waitingForUserInfoId = false;
+        ctx.session.waitingForSupportLink = false;
+        ctx.session.waitingForTradeId = false;
+
+        ctx.session.action = undefined;
+        ctx.session.selectedPair = undefined;
+        ctx.session.selectedTimeframe = undefined;
+        ctx.session.selectedType = undefined;
+        ctx.session.authorizedInQountex = undefined;
+      }
       if (user.role.includes('admin')) {
         await ctx.replyWithHTML(
           `🔑 Щоб отримати повний доступ до нашого робота з більш ніж 100 активами, Вам потрібно створити <b>НОВИЙ АККАУНТ</b> у брокера Quotex строго за посиланням 🔗\n\n
