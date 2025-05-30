@@ -92,7 +92,7 @@ export async function handleCallbackQuery(ctx: MyContext, data: string) {
       ctx.session.action = 'get_signal';
       if (user && !user.qountexId && user.role.includes('user')) {
         if (user.gaveAdminAccess === true) {
-          await ctx.editMessageText(
+         return await ctx.editMessageText(
             'Виберіть тип ринку:',
             Markup.inlineKeyboard([
               [
