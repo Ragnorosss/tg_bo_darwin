@@ -88,7 +88,7 @@ export async function handleCallbackQuery(ctx: MyContext, data: string) {
       }
       break;
     case 'get_signal': {
-      if (user && !user.qountexId && user.role.includes('user')) {
+      if (user && !user.qountexId && user.role.includes('user') && user.gaveAdminAccess === false) {
         return await ctx.reply(
           '❌ Ви не зареєстровані. Будь ласка, зареєструйтесь.',
           Markup.inlineKeyboard([
