@@ -1,6 +1,12 @@
 import { pages } from '../components/what_bot_can';
+import { MyContext } from '../types/CstContext';
+import { getUserAndAuthStatus } from './check-auth';
 
-export function getPaginationKeyboard(page: number) {
+export async function getPaginationKeyboard(
+  page: number,
+  ctx: MyContext,
+  telegramId: string
+) {
   const buttons = [];
   const totalPages = pages.length;
 
@@ -18,16 +24,17 @@ export function getPaginationKeyboard(page: number) {
       callback_data: `photo_page_${page + 1}`,
     });
   }
+  const result = await getUserAndAuthStatus(ctx, telegramId);
+  if (!result) return;
 
-  // Кнопка "В меню"
-  const mainMenuButton = [
-    { text: '🏠 В меню', callback_data: 'show_main_menu' },
-  ];
+  const { checkAuth } = result;
+  const mainMenuButton = [{ text: '🏠 В меню', callback_data: checkAuth }];
+  console.log('getPaginationKeyboard:', { page, checkAuth });
   return {
     reply_markup: {
       inline_keyboard: [
-        buttons, // Строка с навигацией назад/вперёд
-        mainMenuButton, // Отдельная строка с кнопкой "В меню"
+        buttons, 
+        mainMenuButton, 
       ],
     },
   };

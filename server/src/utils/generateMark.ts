@@ -5,29 +5,29 @@ const images = {
 
 export function generateMarketSignal(pair: string) {
   const directions = [
-    { text: 'ВЫШЕ ↑', emoji: '📈', img: images.up },
-    { text: 'НИЖЕ ↓', emoji: '📉', img: images.down },
+    { text: 'ВИЩЕ ↑', emoji: '📈', img: images.up },
+    { text: 'НИЖЧЕ ↓', emoji: '📉', img: images.down },
   ];
-  const risks = ['Low risk', 'Moderate risk', 'High risk'];
+  const risks = ['Низький ризик', 'Помірний ризик', 'Високий ризик'];
 
   const randomPercent = (Math.random() * (1.5 - 0.1) + 0.1).toFixed(2);
   const direction = directions[Math.floor(Math.random() * directions.length)];
   const risk = risks[Math.floor(Math.random() * risks.length)];
 
   const marketOverview =
-    '• Волатильность: Moderate • Настроения: Bearish • Объём: Spiked';
+    '• Волатильність: Помірна • Настрої: Ведмежі • Обʼєм: Різко зріс';
   const tradingViewRating =
-    '• Сводка: STRONG SELL • Скользящие средние: SELL • Осцилляторы: BUY';
+    '• Підсумок: СИЛЬНИЙ ПРОДАЖ • Скользькі середні: ПРОДАВАТИ • Осцилятори: КУПУВАТИ';
   const technicalAnalysis =
-    '• RSI (14): Topping Out • MACD: Bullish Crossover • Полосы Боллинджера: Whipsaw Reactions • Pattern: Double Top';
+    '• RSI (14): Досягає піку • MACD: Бичаче перехрестя • Смуги Боллінджера: Хаотичні коливання • Фігура: Подвійна вершина';
 
   const text = `${pair} Прогноз (+${randomPercent}%) ${direction.text} (${risk})
 
-Обзор рынка: ${marketOverview}
+Огляд ринку: ${marketOverview}
 
-Рейтинг TradingView: ${tradingViewRating}
+Оцінка TradingView: ${tradingViewRating}
 
-Технический анализ: ${technicalAnalysis}`;
+Технічний аналіз: ${technicalAnalysis}`;
 
   return { text, imgPath: direction.img };
 }

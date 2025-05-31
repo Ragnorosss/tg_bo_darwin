@@ -16,7 +16,7 @@ export async function handleCallbackQuery(ctx: MyContext, data: string) {
     return;
   }
 
-  const user = await res.json(); // 👈 обязательно await
+  const user = await res.json();
   if (!ctx.session) ctx.session = {};
 
   switch (data) {
@@ -87,12 +87,124 @@ export async function handleCallbackQuery(ctx: MyContext, data: string) {
         );
       }
       break;
+
+    case 'show_start_auth':
+      if (user.role.includes('user')) {
+        await ctx.replyWithPhoto(
+          { source: './src/assets/last.jpg' },
+          {
+            parse_mode: 'Markdown',
+            reply_markup: Markup.inlineKeyboard([
+              [Markup.button.callback('🤖 Як працює бот?', 'how_works_bot')],
+              [
+                Markup.button.callback('🏆 Лідерборд', 'leader_boards'),
+                Markup.button.callback(
+                  '✉️ Написати в підтримку',
+                  'get_support_link'
+                ),
+              ],
+              [Markup.button.callback('Почати', 'next_step_auth')],
+            ]).reply_markup,
+          }
+        );
+      } else if (user.role.includes('admin')) {
+        await ctx.replyWithPhoto(
+          { source: './src/assets/last.jpg' },
+          {
+            parse_mode: 'Markdown',
+            reply_markup: Markup.inlineKeyboard([
+              [Markup.button.callback('🤖 Як працює бот?', 'how_works_bot')],
+              [Markup.button.callback('🏆 Лідерборд', 'leader_boards')],
+              [
+                Markup.button.callback(
+                  '✉️ Написати в підтримку',
+                  'get_support_link'
+                ),
+              ],
+              [Markup.button.callback('Почати', 'next_step_auth')],
+              [Markup.button.callback('Адмін меню', 'show_admin_menu')],
+            ]).reply_markup,
+          }
+        );
+      }
+      break;
+    case 'next_step_auth':
+      {
+        await ctx.replyWithPhoto(
+          { source: './src/assets/fifty.jpg' },
+          {
+            caption: `🖥 Щоб успішно увійти та активувати бота, необхідно створити новий акаунт на Quotex за нашою спеціальною посиланням або через кнопку нижче. ↓
+
+⭕️ ВАЖЛИВО: Ви повинні зареєструватися тільки за нашим посиланням. В іншому випадку бот не зможе підтвердити, що ви створили акаунт.
+
+Монетизація бота здійснюється завдяки партнерській програмі платформи. Ми не стягуємо жодних комісій і не беремо з вас ніяких коштів.`,
+            reply_markup: Markup.inlineKeyboard([
+              [
+                Markup.button.callback(
+                  'Я створив аккаунт, перевірити ID',
+                  'show_reg_menu'
+                ),
+                Markup.button.url(
+                  'Створити аккаунт на Quotex',
+                  'https://broker-qx.pro/sign-up/?lid=1367282'
+                ),
+              ],
+            ]).reply_markup,
+          }
+        );
+      }
+      break;
+
+    case 'show_main_menu':
+      if (user.role.includes('admin')) {
+       return await ctx.replyWithPhoto(
+          { source: './src/assets/start_sell.jpg' },
+          {
+            reply_markup: Markup.inlineKeyboard([
+              [
+                Markup.button.callback('💻Отримати прогноз', 'get_signal'),
+                Markup.button.callback('🤖 Як працює бот?', 'how_works_bot'),
+              ],
+              [
+                Markup.button.callback('🏆 Лідерборд', 'leader_boards'),
+                Markup.button.callback(
+                  '✉️ Написати в підтримку',
+                  'get_support_link'
+                ),
+                Markup.button.callback('Адмін меню', 'show_admin_menu'),
+              ],
+            ]).reply_markup,
+          }
+        );
+      }
+      if (user.role.includes('user')) {
+       return await ctx.replyWithPhoto(
+          { source: './src/assets/start_sell.jpg' },
+          {
+            reply_markup: Markup.inlineKeyboard([
+              [
+                Markup.button.callback('💻Отримати прогноз', 'get_signal'),
+                Markup.button.callback('🤖 Як працює бот?', 'how_works_bot'),
+              ],
+              [
+                Markup.button.callback('🏆 Лідерборд', 'leader_boards'),
+                Markup.button.callback(
+                  '✉️ Написати в підтримку',
+                  'get_support_link'
+                ),
+              ],
+            ]).reply_markup,
+          }
+        );
+      }
+      break;
+
     case 'get_signal': {
       const stockActive = isStockTradingTime();
       ctx.session.action = 'get_signal';
       if (user && !user.qountexId && user.role.includes('user')) {
         if (user.gaveAdminAccess === true) {
-         return await ctx.editMessageText(
+          return await ctx.editMessageText(
             'Виберіть тип ринку:',
             Markup.inlineKeyboard([
               [
@@ -112,7 +224,7 @@ export async function handleCallbackQuery(ctx: MyContext, data: string) {
         return await ctx.reply(
           '❌ Ви не зареєстровані. Будь ласка, зареєструйтесь.',
           Markup.inlineKeyboard([
-            [Markup.button.callback('📝 Реєстрація', 'show_reg_menu')],
+            [Markup.button.callback('📝 Реєстрація', 'show_start_auth')],
             [
               Markup.button.callback(
                 'Написати в підтримку',
@@ -124,7 +236,7 @@ export async function handleCallbackQuery(ctx: MyContext, data: string) {
         );
       }
 
-      await ctx.editMessageText(
+      await ctx.reply(
         'Виберіть тип ринку:',
         Markup.inlineKeyboard([
           [
@@ -142,79 +254,6 @@ export async function handleCallbackQuery(ctx: MyContext, data: string) {
       );
       break;
     }
-
-    case 'show_main_menu':
-      if (ctx.session) {
-        ctx.session.waitingForAdminId = false;
-        ctx.session.waitingForTraderId = false;
-        ctx.session.waitingForUserInfoId = false;
-        ctx.session.waitingForSupportLink = false;
-        ctx.session.waitingForTradeId = false;
-
-        ctx.session.action = undefined;
-        ctx.session.selectedPair = undefined;
-        ctx.session.selectedTimeframe = undefined;
-        ctx.session.selectedType = undefined;
-        ctx.session.authorizedInQountex = undefined;
-      }
-      if (user.role.includes('admin')) {
-        await ctx.replyWithHTML(
-          `🔑 Щоб отримати повний доступ до нашого робота з більш ніж 100 активами, Вам потрібно створити <b>НОВИЙ АККАУНТ</b> у брокера Quotex строго за посиланням 🔗\n\n
-  ❗ <b>Увага!</b> Навіть якщо у Вас уже є акаунт — потрібно створити <b>НОВИЙ</b> за посиланням нижче. Інакше бот не зможе перевірити акаунт, і Ви не отримаєте доступ до бота ❗\n\n
-  👉 <a href="https://broker-qx.pro/sign-up/fast/?lid=1367279&click_id={cid}&site_id={sid}">Зареєструватись на Quotex</a>\n\n
-  ⚠️ <b>Важливо:</b> не давайте нікому свій ID, оскільки бот видається тільки на 1 акаунт.\n\n
-  Якщо Вам потрібно щось ще, дайте знати! 😉`,
-          Markup.inlineKeyboard([
-            [
-              Markup.button.callback('📡 Отримати сигнал', 'get_signal'),
-              Markup.button.callback('🤖 Як працює бот?', 'how_works_bot'),
-            ],
-            [
-              Markup.button.callback('🏆 Лідерборд', 'leader_boards'),
-              Markup.button.callback(
-                '✉️ Написати в підтримку',
-                'get_support_link'
-              ),
-              Markup.button.callback('Адмін меню', 'show_admin_menu'),
-            ],
-          ])
-        );
-      } else {
-        await ctx.replyWithHTML(
-          `🔑 Щоб отримати повний доступ до нашого робота з більш ніж 100 активами, Вам потрібно створити <b>НОВИЙ АККАУНТ</b> у брокера Quotex строго за посиланням 🔗\n\n
-  ❗ <b>Увага!</b> Навіть якщо у Вас уже є акаунт — потрібно створити <b>НОВИЙ</b> за посиланням нижче. Інакше бот не зможе перевірити акаунт, і Ви не отримаєте доступ до бота ❗\n\n
-  👉 <a href="https://broker-qx.pro/sign-up/fast/?lid=1367279&click_id={cid}&site_id={sid}">Зареєструватись на Quotex</a>\n\n
-  ⚠️ <b>Важливо:</b> не давайте нікому свій ID, оскільки бот видається тільки на 1 акаунт.\n\n
-  Якщо Вам потрібно щось ще, дайте знати! 😉`,
-          Markup.inlineKeyboard([
-            [
-              Markup.button.callback('📡 Отримати сигнал', 'get_signal'),
-              Markup.button.callback('🤖 Як працює бот?', 'how_works_bot'),
-            ],
-            [
-              Markup.button.callback('🏆 Лідерборд', 'leader_boards'),
-              Markup.button.callback(
-                '✉️ Написати в підтримку',
-                'get_support_link'
-              ),
-            ],
-          ])
-        );
-      }
-      break;
-
-    case 'show_reg_menu':
-      await ctx.reply(
-        `"Введіть ваш ID, який знаходиться у вашому профілі (Наприклад: 46230574)"\n
-Повідомлення просить користувача ввести свій ID, який можна знайти в його профілі, і наводить приклад номера ID: 46230574.`,
-        Markup.inlineKeyboard([
-          [Markup.button.callback('Написати в підтримку', 'get_support_link')],
-          [Markup.button.callback('Відміна', 'show_main_menu')],
-        ])
-      );
-      ctx.session.waitingForTraderId = true;
-      break;
-
     case 'show_time_menu_stok':
       await ctx.editMessageText(
         'Меню STOK — оберіть таймфрейм:',

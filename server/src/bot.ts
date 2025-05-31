@@ -12,6 +12,7 @@ import { handleCallbackQuery } from './utils/callback_interceptor';
 import { generatePairButtons } from './utils/btn_generate';
 import { adminMenu } from './components/adminMenu';
 import { IUser } from './models/User';
+import { getUserAndAuthStatus } from './utils/check-auth';
 
 dotenv.config();
 
@@ -20,23 +21,24 @@ export const bot = new Telegraf<MyContext>(process.env.BOT_TOKEN!);
 bot.use(session());
 
 bot.command('start', async (ctx) => {
-  const telegramId = String(ctx.from.id);
-  const res = await fetch(`${process.env.URL}users/create`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      telegramId: telegramId,
-      username: ctx.from.username,
-      firstName: ctx.from.first_name,
-    }),
-  });
+  if (ctx.session) {
+    ctx.session.waitingForAdminId = false;
+    ctx.session.waitingForTraderId = false;
+    ctx.session.waitingForUserInfoId = false;
+    ctx.session.waitingForSupportLink = false;
+    ctx.session.waitingForTradeId = false;
 
-  if (!res.ok) {
-    const text = await res.text(); // вместо json, чтобы увидеть ошибку
-    console.error(`Ошибка ${res.status}: ${text}`);
-    await ctx.reply('Проблема с получением пользователя');
-    return;
+    ctx.session.action = undefined;
+    ctx.session.selectedPair = undefined;
+    ctx.session.selectedTimeframe = undefined;
+    ctx.session.selectedType = undefined;
+    ctx.session.authorizedInQountex = undefined;
   }
+  const telegramId = String(ctx.from.id);
+  const result = await getUserAndAuthStatus(ctx, telegramId);
+  if (!result) return;
+
+  const { checkAuth } = result;
 
   await ctx.replyWithPhoto(
     { source: './src/assets/welcome.jpg' },
@@ -53,7 +55,7 @@ bot.command('start', async (ctx) => {
 💰 Торгуй з розумом — заробляй більше! 🚀`,
       parse_mode: 'Markdown',
       reply_markup: Markup.inlineKeyboard([
-        [Markup.button.callback('Далее', 'show_main_menu')],
+        [Markup.button.callback('Далее', checkAuth)],
       ]).reply_markup,
     }
   );
@@ -62,10 +64,34 @@ bot.action('show_admin_menu', async (ctx) => {
   await ctx.answerCbQuery();
   await ctx.reply('Адмінське меню:', adminMenu);
 });
+bot.action('show_reg_menu', async (ctx) => {
+  ctx.session.waitingForTraderId = true;
+
+  await ctx.replyWithPhoto(
+    { source: './src/assets/guid.jpg' },
+    {
+      caption: `Скиньте ваш ID на Quotex
+  
+  1) Натисніть на ваш рахунок у верхньому лівому куті, як це показано на картинці вище.
+  2) Скопіюйте ваш ID.
+  3) Скиньте ID боту в цей чат.
+  
+  Виникли проблеми? Написати в підтримку (https://t.me/zahar_blog)`,
+      reply_markup: Markup.inlineKeyboard([
+        [
+          Markup.button.url(
+            '🆘Написати в підтримку🆘',
+            'https://t.me/zahar_blog'
+          ),
+        ],
+        [Markup.button.callback('❌Відміна❌', 'show_start_auth')],
+      ]).reply_markup,
+    }
+  );
+});
 bot.action('set_support_link', async (ctx) => {
   ctx.session.waitingForSupportLink = true;
-  ctx.session.waitingForTraderId = false; // ❗ обязательно сбрасываем другие флаги
-  await ctx.answerCbQuery(); // закрываем "часики"
+  await ctx.answerCbQuery(); 
   await ctx.reply(
     '🔗 Введіть нове посилання на підтримку (наприклад: https://t.me/support)',
     Markup.inlineKeyboard([
@@ -77,16 +103,19 @@ bot.action('set_support_link', async (ctx) => {
 
 bot.action('how_works_bot', async (ctx) => {
   const page = 0;
+  const telegramId = String(ctx.from.id);
+  const keyboard = await getPaginationKeyboard(page, ctx, telegramId);
   await ctx.replyWithPhoto(
     { source: pages[page].photo },
     {
       caption: pages[page].text,
       parse_mode: 'Markdown',
-      ...getPaginationKeyboard(page),
+      ...keyboard,
     }
   );
   await ctx.answerCbQuery();
 });
+
 bot.action('search_by_trade_id', async (ctx) => {
   ctx.session.waitingForTradeId = true;
   await ctx.answerCbQuery();
@@ -394,14 +423,27 @@ bot.on('text', async (ctx) => {
 
       if (res.ok) {
         return ctx.reply(
-          `✅ Ваш ID (${inputId}) успішно зв’язано з вашим профілем.`,
+          `✅Успішна реєстрація!`,
           Markup.inlineKeyboard([
             [Markup.button.callback('🔙 Назад', 'show_main_menu')],
           ])
         );
       } else {
         return ctx.reply(
-          `❌ Помилка: ${data.error || 'Не вдалося зв’язати ID.'}`
+          `❌Ви ввели неправильний ID!
+Будь ласка, спробуйте ще раз.}`,
+          Markup.inlineKeyboard([
+            [
+              Markup.button.callback(
+                'Я створив аккаунт, перевірити ID',
+                'show_start_auth'
+              ),
+              Markup.button.url(
+                '🆘Написати в підтримку🆘',
+                'https://t.me/zahar_blog'
+              ),
+            ],
+          ])
         );
       }
     } catch (error) {
@@ -410,22 +452,12 @@ bot.on('text', async (ctx) => {
     }
   }
 });
-bot.action('how_works_bot', async (ctx) => {
-  const page = 0;
-  await ctx.replyWithPhoto(
-    { source: pages[page].photo },
-    {
-      caption: pages[page].text,
-      parse_mode: 'Markdown',
-      ...getPaginationKeyboard(page),
-    }
-  );
-  await ctx.answerCbQuery();
-});
+
 const pageSize = 5;
 // Обработчик первой страницы лидерборда
 bot.action('leader_boards', async (ctx) => {
   await ctx.answerCbQuery();
+  const telegramId = String(ctx.from.id);
 
   const pages = paginateUsers(topUsers, pageSize);
   const pageIndex = 0;
@@ -435,15 +467,16 @@ bot.action('leader_boards', async (ctx) => {
     pageIndex * pageSize
   )}`;
 
-  await ctx.editMessageText(
+  await ctx.reply(
     text,
-    getPaginationKeyboardUsers(pageIndex, pages.length)
+    await getPaginationKeyboardUsers(pageIndex, pages.length, ctx, telegramId)
   );
 });
 
 // Обработчик переключения страниц лидерборда
 bot.action(/leader_page_(\d+)/, async (ctx) => {
   const pageIndex = Number(ctx.match[1]);
+  const telegramId = String(ctx.from.id);
   const pages = paginateUsers(topUsers, pageSize);
 
   if (pageIndex < 0 || pageIndex >= pages.length) {
@@ -459,29 +492,31 @@ bot.action(/leader_page_(\d+)/, async (ctx) => {
 
   await ctx.editMessageText(
     text,
-    getPaginationKeyboardUsers(pageIndex, pages.length)
+    await getPaginationKeyboardUsers(pageIndex, pages.length, ctx, telegramId)
   );
 
   await ctx.answerCbQuery();
 });
 bot.action(/photo_page_(\d+)/, async (ctx) => {
-  const page = parseInt(ctx.match[1]);
+  const telegramId = String(ctx.from.id);
+  const page = parseInt(ctx.match[1], 10);
 
-  if (page < 0 || page >= pages.length) {
-    return ctx.answerCbQuery();
+  const keyboard = await getPaginationKeyboard(page, ctx, telegramId);
+  try {
+    await ctx.editMessageMedia(
+      {
+        type: 'photo',
+        media: { source: pages[page].photo },
+        caption: pages[page].text,
+        parse_mode: 'Markdown',
+      },
+      keyboard
+    );
+
+    await ctx.answerCbQuery();
+  } catch (error) {
+    console.log('photo', error);
   }
-
-  await ctx.editMessageMedia(
-    {
-      type: 'photo',
-      media: { source: pages[page].photo },
-      caption: pages[page].text, // <-- добавляем caption
-      parse_mode: 'Markdown', //
-    },
-    getPaginationKeyboard(page)
-  );
-
-  await ctx.answerCbQuery();
 });
 
 bot.action(/^select_pair_(.+)$/, async (ctx) => {
@@ -522,6 +557,12 @@ bot.action('show_user_info', async (ctx) => {
 
 bot.action('get_support_link', async (ctx) => {
   try {
+    const telegramId = String(ctx.from.id);
+    await getUserAndAuthStatus(ctx, telegramId);
+    const result = await getUserAndAuthStatus(ctx, telegramId);
+    if (!result) return;
+
+    const { checkAuth } = result;
     const response = await fetch(`${process.env.URL}support/get-support-link`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
@@ -540,7 +581,7 @@ bot.action('get_support_link', async (ctx) => {
 
     await ctx.reply(`✉️ Связаться с поддержкой:\n${data.link}`, {
       reply_markup: Markup.inlineKeyboard([
-        [Markup.button.callback('🏠 До головного меню', 'show_main_menu')],
+        [Markup.button.callback('🏠 До головного меню', checkAuth)],
       ]).reply_markup,
     });
   } catch (error) {
@@ -629,17 +670,4 @@ bot.on('callback_query', async (ctx) => {
     );
     return;
   }
-});
-bot.action('show_reg_menu', async (ctx) => {
-  // Помечаем в сессии, что пользователь сейчас вводит traderId
-  ctx.session.waitingForTraderId = true;
-
-  await ctx.answerCbQuery(); // закрываем "часики" на кнопке
-  await ctx.reply(
-    `Введіть ваш ID, який знаходиться у вашому профілі (Наприклад: 46230574)`,
-    Markup.inlineKeyboard([
-      [Markup.button.callback('Написати в підтримку', 'get_support_link')],
-      [Markup.button.callback('Відміна', 'show_main_menu')],
-    ])
-  );
 });
