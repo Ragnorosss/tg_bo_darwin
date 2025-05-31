@@ -157,7 +157,7 @@ export async function handleCallbackQuery(ctx: MyContext, data: string) {
 
     case 'show_main_menu':
       if (user.role.includes('admin')) {
-       return await ctx.replyWithPhoto(
+        return await ctx.replyWithPhoto(
           { source: './src/assets/start_sell.jpg' },
           {
             reply_markup: Markup.inlineKeyboard([
@@ -178,7 +178,7 @@ export async function handleCallbackQuery(ctx: MyContext, data: string) {
         );
       }
       if (user.role.includes('user')) {
-       return await ctx.replyWithPhoto(
+        return await ctx.replyWithPhoto(
           { source: './src/assets/start_sell.jpg' },
           {
             reply_markup: Markup.inlineKeyboard([
