@@ -1,7 +1,6 @@
 import { Response } from 'express';
 import { app } from './app';
 import { bot } from './bot';
-import { Test } from './service/test';
 import dotenv from 'dotenv';
 import { connectDB } from './config/db';
 
@@ -10,7 +9,6 @@ dotenv.config();
 const PORT = process.env.PORT || 3000;
 app.use(bot.webhookCallback('/webhook'));
 
-app.post('/webhook', Test);
 app.get('/', (_, res: Response) => {
   res.send('Бот запущен');
 });

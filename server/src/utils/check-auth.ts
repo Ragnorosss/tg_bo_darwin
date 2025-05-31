@@ -21,7 +21,9 @@ export async function getUserAndAuthStatus(ctx: MyContext, telegramId: string) {
 
     const user = await res.json();
     const isUnauthorized = !user.qountexId && user.gaveAdminAccess === false;
-    const checkAuth = isUnauthorized ? 'show_start_auth' : 'show_main_menu';
+    const isAdmin = user.role.includes('admin');
+    const checkAuth =
+      isUnauthorized && !isAdmin ? 'show_start_auth' : 'show_main_menu';
     return { user, checkAuth };
   } catch (err) {
     console.error('Ошибка при получении пользователя:', err);

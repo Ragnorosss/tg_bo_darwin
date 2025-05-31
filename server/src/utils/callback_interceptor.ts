@@ -73,22 +73,9 @@ export async function handleCallbackQuery(ctx: MyContext, data: string) {
       ctx.session.waitingForAdminId = true;
       ctx.session.action = 'revoke_access';
       break;
-    case 'show_user_info':
-      {
-        ctx.session.waitingForUserInfoId = true;
-
-        await ctx.answerCbQuery();
-        await ctx.reply(
-          '🔍 Введіть Telegram ID користувача, інформацію про якого хочете отримати:',
-          Markup.inlineKeyboard([
-            [Markup.button.callback('❌ Відміна', 'show_main_menu')],
-            [Markup.button.callback('Адмін меню', 'show_admin_menu')],
-          ])
-        );
-      }
-      break;
 
     case 'show_start_auth':
+      ctx.session.waitingForTraderId = false;
       if (user.role.includes('user')) {
         await ctx.replyWithPhoto(
           { source: './src/assets/last.jpg' },
@@ -156,6 +143,19 @@ export async function handleCallbackQuery(ctx: MyContext, data: string) {
       break;
 
     case 'show_main_menu':
+      if (ctx.session) {
+        ctx.session.waitingForAdminId = false;
+        ctx.session.waitingForTraderId = false;
+        ctx.session.waitingForUserInfoId = false;
+        ctx.session.waitingForSupportLink = false;
+        ctx.session.waitingForTradeId = false;
+
+        ctx.session.action = undefined;
+        ctx.session.selectedPair = undefined;
+        ctx.session.selectedTimeframe = undefined;
+        ctx.session.selectedType = undefined;
+        ctx.session.authorizedInQountex = undefined;
+      }
       if (user.role.includes('admin')) {
         return await ctx.replyWithPhoto(
           { source: './src/assets/start_sell.jpg' },
